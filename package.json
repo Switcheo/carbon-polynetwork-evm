@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "truffle-privatekey-provider": "^1.3.0"
+  },
+  "devDependencies": {
+    "abi-decoder": "^2.0.1",
+    "eslint": "^6.2.0",
+    "eslint-config-google": "^0.13.0",
+    "web3": "^1.2.4"
+  }
+}

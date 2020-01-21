@@ -1,0 +1,30 @@
+{
+    "env": {
+        "browser": true,
+        "commonjs": true,
+        "es6": true
+    },
+    "extends": [
+        "google"
+    ],
+    "globals": {
+        "Atomics": "readonly",
+        "SharedArrayBuffer": "readonly",
+        "artifacts": "readonly"
+    },
+    "parserOptions": {
+        "ecmaVersion": 2018
+    },
+    "rules": {
+      "indent": "off",
+      "semi": ["error", "never"],
+      "object-curly-spacing": ["error", "always"],
+      "one-var": "off",
+      "max-len": ["error", { "code": 120 }],
+      "comma-dangle": ["error", "never"],
+      "require-jsdoc": "off",
+      "block-spacing": "off",
+      "brace-style": "off",
+      "guard-for-in": "off"
+    }
+}
