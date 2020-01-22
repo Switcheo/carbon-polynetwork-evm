@@ -15,15 +15,23 @@ contract Vault {
         address indexed user,
         address indexed assetId,
         uint256 amount,
-        bytes indexed externalAddress
+        bytes indexed externalAddress,
+        bytes externalSignature
     );
 
-    function deposit(bytes calldata _externalAddress) external payable {
+    function deposit(
+        bytes calldata _externalAddress,
+        bytes calldata _externalSignature
+    )
+        external
+        payable
+    {
         emit Deposit(
             msg.sender,
             ETHER_ADDR,
             msg.value,
-            _externalAddress
+            _externalAddress,
+            _externalSignature
         );
     }
 
@@ -31,7 +39,8 @@ contract Vault {
         address _assetId,
         uint256 _amount,
         uint256 _expectedAmount,
-        bytes calldata _externalAddress
+        bytes calldata _externalAddress,
+        bytes calldata _externalSignature
     )
         external
     {
@@ -46,7 +55,8 @@ contract Vault {
             msg.sender,
             _assetId,
             _expectedAmount,
-            _externalAddress
+            _externalAddress,
+            _externalSignature
         );
     }
 
