@@ -15,7 +15,7 @@ contract Vault {
         address indexed user,
         address indexed assetId,
         uint256 amount,
-        bytes indexed externalAddress,
+        bytes externalAddress,
         bytes externalSignature
     );
 
