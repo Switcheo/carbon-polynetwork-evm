@@ -27,7 +27,16 @@ contract Wallet {
     address public vaultAddress;
     uint256 public nonce;
 
-    constructor(address _nativeAddress, bytes memory _externalAddress, address _vaultAddress) public {
+    bool isInitialized;
+
+    function initialize(
+        address _nativeAddress,
+        bytes calldata _externalAddress,
+        address _vaultAddress
+    )
+        external
+    {
+        require(isInitialized == false, "Contract already initialized");
         nativeAddress = _nativeAddress;
         externalAddress = _externalAddress;
         vaultAddress = _vaultAddress;
