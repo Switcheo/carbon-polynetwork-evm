@@ -1,11 +1,9 @@
-pragma solidity 0.5.16;
-
-import "./IERC20.sol";
+pragma solidity 0.6.5;
 
 /**
  * @dev Optional functions from the ERC20 standard.
  */
-contract ERC20Detailed is IERC20 {
+contract ERC20Detailed {
     string private _name;
     string private _symbol;
     uint8 private _decimals;

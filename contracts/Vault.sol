@@ -1,4 +1,4 @@
-pragma solidity 0.5.16;
+pragma solidity 0.6.5;
 
 import "./lib/math/SafeMath.sol";
 
@@ -73,7 +73,6 @@ contract Vault {
             _amount
         );
     }
-
 
     function _withdraw(
         address payable _receivingAddress,
