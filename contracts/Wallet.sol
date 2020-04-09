@@ -9,12 +9,12 @@ interface ERC20 {
 }
 
 interface Vault {
-    function deposit(bytes calldata _externalAddress) external payable;
+    function deposit(string calldata _externalAddress) external payable;
 
     function depositToken(
         address _assetId,
         uint256 _amount,
-        bytes calldata _externalAddress
+        string calldata _externalAddress
     ) external;
 }
 
@@ -23,7 +23,7 @@ contract Wallet {
     using Address for address;
 
     address public nativeAddress;
-    bytes public externalAddress;
+    string public externalAddress;
     address public vaultAddress;
     uint256 public nonce;
 
@@ -31,7 +31,7 @@ contract Wallet {
 
     function initialize(
         address _nativeAddress,
-        bytes calldata _externalAddress,
+        string calldata _externalAddress,
         address _vaultAddress
     )
         external
