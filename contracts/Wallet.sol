@@ -37,6 +37,7 @@ contract Wallet {
         external
     {
         require(isInitialized == false, "Contract already initialized");
+        isInitialized = true;
         nativeAddress = _nativeAddress;
         externalAddress = _externalAddress;
         vaultAddress = _vaultAddress;

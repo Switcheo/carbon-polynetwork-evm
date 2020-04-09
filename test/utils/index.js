@@ -1,6 +1,15 @@
 const WalletFactory = artifacts.require('WalletFactory')
+const Wallet = artifacts.require('Wallet')
 
 async function getWalletFactory() { return await WalletFactory.deployed() }
+
+async function createWallet({ nativeAddress, externalAddress, vaultAddress }) {
+    const factory = await getWalletFactory()
+    const walletAddress = await factory.createWallet.call(nativeAddress, externalAddress, vaultAddress)
+    await factory.createWallet(nativeAddress, externalAddress, vaultAddress)
+
+    return Wallet.at(walletAddress)
+}
 
 function assertEqual(valueA, valueB) {
     if (valueA.toString !== undefined) { valueA = valueA.toString() }
@@ -31,6 +40,7 @@ async function assertReversion(promise, errorMessage) {
 
 module.exports = {
     getWalletFactory,
+    createWallet,
     assertEqual,
     assertAsync,
     assertReversion

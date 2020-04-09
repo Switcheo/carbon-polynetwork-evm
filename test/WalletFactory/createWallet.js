@@ -17,7 +17,8 @@ contract('Test createWallet', async (accounts) => {
             const expectedAddress = await factory.createWallet.call(nativeAddress, externalAddress, vaultAddress)
             await assertReversion(Wallet.at(expectedAddress), 'Cannot create instance of Wallet; no code at address')
 
-            await factory.createWallet(nativeAddress, externalAddress, vaultAddress)
+            const result = await factory.createWallet(nativeAddress, externalAddress, vaultAddress)
+            console.log('Gas used:', result.receipt.gasUsed)
 
             const wallet = await Wallet.at(expectedAddress)
             await assertAsync(wallet.nativeAddress(), nativeAddress)
