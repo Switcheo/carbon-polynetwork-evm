@@ -15,13 +15,11 @@ contract Vault {
         address indexed user,
         address indexed assetId,
         uint256 amount,
-        bytes externalAddress,
-        bytes externalSignature
+        string externalAddress
     );
 
     function deposit(
-        bytes calldata _externalAddress,
-        bytes calldata _externalSignature
+        string calldata _externalAddress
     )
         external
         payable
@@ -30,33 +28,28 @@ contract Vault {
             msg.sender,
             ETHER_ADDR,
             msg.value,
-            _externalAddress,
-            _externalSignature
+            _externalAddress
         );
     }
 
     function depositToken(
         address _assetId,
         uint256 _amount,
-        uint256 _expectedAmount,
-        bytes calldata _externalAddress,
-        bytes calldata _externalSignature
+        string calldata _externalAddress
     )
         external
     {
-        _transferTokensIn(
+        uint256 receivedAmount = _transferTokensIn(
             msg.sender,
             _assetId,
-            _amount,
-            _expectedAmount
+            _amount
         );
 
         emit Deposit(
             msg.sender,
             _assetId,
-            _expectedAmount,
-            _externalAddress,
-            _externalSignature
+            receivedAmount,
+            _externalAddress
         );
     }
 
@@ -97,16 +90,15 @@ contract Vault {
     /// @param _user The address to transfer the tokens from
     /// @param _assetId The address of the token to transfer
     /// @param _amount The number of tokens to transfer
-    /// @param _expectedAmount The number of tokens expected to be received,
     /// this may not match `_amount`, for example, tokens which have a
     /// proportion burnt on transfer will have a different amount received.
     function _transferTokensIn(
         address _user,
         address _assetId,
-        uint256 _amount,
-        uint256 _expectedAmount
+        uint256 _amount
     )
         private
+        returns (uint256)
     {
         _validateContractAddress(_assetId);
 
@@ -129,7 +121,7 @@ contract Vault {
         uint256 finalBalance = _tokenBalance(_assetId);
         uint256 transferredAmount = finalBalance.sub(initialBalance);
 
-        require(transferredAmount == _expectedAmount, "Invalid transfer");
+        return transferredAmount;
     }
 
     /// @notice Transfers tokens from the contract to a user

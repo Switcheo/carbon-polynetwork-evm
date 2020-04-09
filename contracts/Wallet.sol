@@ -5,6 +5,7 @@ import "./lib/utils/Address.sol";
 
 interface ERC20 {
     function balanceOf(address account) external view returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
@@ -51,26 +52,55 @@ contract Wallet {
 
     function sendERC20Tokens(address _assetId) external {
         uint256 amount = _tokenBalance(_assetId);
+        _sendERC20Tokens(_assetId, amount);
+    }
+
+    function sendERC20Tokens(
+        address _assetId,
+        uint256 _amount
+    )
+        external
+    {
+        _sendERC20Tokens(_assetId, _amount);
+    }
+
+    function setAllowance(address _assetId, uint256 _amount) public {
         ERC20 token = ERC20(_assetId);
         _callOptionalReturn(
             _assetId,
             abi.encodeWithSelector(
                 token.approve.selector,
                 vaultAddress,
-                amount
+                _amount
             )
-        );
-
-        Vault vault = Vault(vaultAddress);
-        vault.depositToken(
-            _assetId,
-            amount,
-            externalAddress
         );
     }
 
     /// @dev Allow this contract to receive Ethereum
     receive() external payable {}
+
+    function _sendERC20Tokens(
+        address _assetId,
+        uint256 _amount
+    )
+        private
+    {
+        ERC20 token = ERC20(_assetId);
+
+        uint256 allowance = token.allowance(address(this), vaultAddress);
+
+        if (_amount > allowance) {
+            // set allowance to the max value of uint256
+            setAllowance(_assetId, ~uint256(0));
+        }
+
+        Vault vault = Vault(vaultAddress);
+        vault.depositToken(
+            _assetId,
+            _amount,
+            externalAddress
+        );
+    }
 
     /// @notice Returns the number of tokens owned by this contract.
     /// @dev This will not work for Ether tokens, use `externalBalance` for
