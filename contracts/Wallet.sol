@@ -52,16 +52,17 @@ contract Wallet {
 
     function sendERC20Tokens(address _assetId) external {
         uint256 amount = _tokenBalance(_assetId);
-        _sendERC20Tokens(_assetId, amount);
+        _sendERC20Tokens(_assetId, amount, ~uint256(0));
     }
 
     function sendERC20Tokens(
         address _assetId,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _maxAllowance
     )
         external
     {
-        _sendERC20Tokens(_assetId, _amount);
+        _sendERC20Tokens(_assetId, _amount, _maxAllowance);
     }
 
     function setAllowance(address _assetId, uint256 _amount) public {
@@ -81,7 +82,8 @@ contract Wallet {
 
     function _sendERC20Tokens(
         address _assetId,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _maxAllowance
     )
         private
     {
@@ -90,8 +92,7 @@ contract Wallet {
         uint256 allowance = token.allowance(address(this), vaultAddress);
 
         if (_amount > allowance) {
-            // set allowance to the max value of uint256
-            setAllowance(_assetId, ~uint256(0));
+            setAllowance(_assetId, _maxAllowance);
         }
 
         Vault vault = Vault(vaultAddress);
