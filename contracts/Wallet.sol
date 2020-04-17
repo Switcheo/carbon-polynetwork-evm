@@ -50,42 +50,12 @@ contract Wallet {
         vault.deposit{value: amount}(externalAddress);
     }
 
-    function sendERC20Tokens(address _assetId) external {
-        uint256 amount = _tokenBalance(_assetId);
-        _sendERC20Tokens(_assetId, amount, ~uint256(0));
-    }
-
     function sendERC20Tokens(
         address _assetId,
         uint256 _amount,
         uint256 _maxAllowance
     )
         external
-    {
-        _sendERC20Tokens(_assetId, _amount, _maxAllowance);
-    }
-
-    function setAllowance(address _assetId, uint256 _amount) public {
-        ERC20 token = ERC20(_assetId);
-        _callOptionalReturn(
-            _assetId,
-            abi.encodeWithSelector(
-                token.approve.selector,
-                vaultAddress,
-                _amount
-            )
-        );
-    }
-
-    /// @dev Allow this contract to receive Ethereum
-    receive() external payable {}
-
-    function _sendERC20Tokens(
-        address _assetId,
-        uint256 _amount,
-        uint256 _maxAllowance
-    )
-        private
     {
         ERC20 token = ERC20(_assetId);
 
@@ -102,6 +72,21 @@ contract Wallet {
             externalAddress
         );
     }
+
+    function setAllowance(address _assetId, uint256 _amount) public {
+        ERC20 token = ERC20(_assetId);
+        _callOptionalReturn(
+            _assetId,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                vaultAddress,
+                _amount
+            )
+        );
+    }
+
+    /// @dev Allow this contract to receive Ethereum
+    receive() external payable {}
 
     /// @notice Returns the number of tokens owned by this contract.
     /// @dev This will not work for Ether tokens, use `externalBalance` for
