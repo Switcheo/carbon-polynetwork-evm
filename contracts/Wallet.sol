@@ -23,12 +23,15 @@ contract Wallet {
     using SafeMath for uint256;
     using Address for address;
 
+    address public nativeAddress;
     string public externalAddress;
     address public vaultAddress;
+    uint256 public nonce;
 
     bool isInitialized;
 
     function initialize(
+        address _nativeAddress,
         string calldata _externalAddress,
         address _vaultAddress
     )
@@ -36,6 +39,7 @@ contract Wallet {
     {
         require(isInitialized == false, "Contract already initialized");
         isInitialized = true;
+        nativeAddress = _nativeAddress;
         externalAddress = _externalAddress;
         vaultAddress = _vaultAddress;
     }

@@ -6,6 +6,7 @@ contract WalletFactory {
     bytes public constant SALT_PREFIX = "switcheo-eth-wallet-factory-v1";
 
     function createWallet(
+        address _nativeAddress,
         string calldata _externalAddress,
         address _vaultAddress
     )
@@ -14,6 +15,7 @@ contract WalletFactory {
     {
         bytes32 salt = keccak256(abi.encodePacked(
             SALT_PREFIX,
+            _nativeAddress,
             _externalAddress,
             _vaultAddress
         ));
@@ -21,6 +23,7 @@ contract WalletFactory {
         Wallet wallet = new Wallet{salt: salt}();
 
         wallet.initialize(
+            _nativeAddress,
             _externalAddress,
             _vaultAddress
         );
