@@ -1,6 +1,7 @@
 const Vault = artifacts.require('Vault')
 const WalletFactory = artifacts.require('WalletFactory')
 const Wallet = artifacts.require('Wallet')
+const JRCoin = artifacts.require('JRCoin')
 
 const Web3 = require('web3')
 const web3 = new Web3(Web3.givenProvider)
@@ -9,6 +10,7 @@ const { ETHER_ADDR } = require('../constants')
 
 async function getVault() { return await Vault.deployed() }
 async function getWalletFactory() { return await WalletFactory.deployed() }
+async function getJrc() { return await JRCoin.deployed() }
 
 async function createWallet({ nativeAddress, externalAddress, vaultAddress }) {
     const factory = await getWalletFactory()
@@ -57,6 +59,7 @@ module.exports = {
     web3,
     getVault,
     getWalletFactory,
+    getJrc,
     createWallet,
     assertEqual,
     assertAsync,
