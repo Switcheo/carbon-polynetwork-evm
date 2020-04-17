@@ -12,27 +12,31 @@ contract Vault {
     address private constant ETHER_ADDR = address(0x8000003c);
 
     event Deposit(
-        address indexed user,
-        address indexed assetId,
+        address user,
+        address assetId,
         uint256 amount,
-        string externalAddress
+        string externalAddress,
+        address sender
     );
 
     function deposit(
+        address _user,
         string calldata _externalAddress
     )
         external
         payable
     {
         emit Deposit(
-            msg.sender,
+            _user,
             ETHER_ADDR,
             msg.value,
-            _externalAddress
+            _externalAddress,
+            tx.origin
         );
     }
 
     function depositToken(
+        address _user,
         address _assetId,
         uint256 _amount,
         string calldata _externalAddress
@@ -46,10 +50,11 @@ contract Vault {
         );
 
         emit Deposit(
-            msg.sender,
+            _user,
             _assetId,
             receivedAmount,
-            _externalAddress
+            _externalAddress,
+            tx.origin
         );
     }
 

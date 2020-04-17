@@ -5,13 +5,14 @@ contract('Test sendETH', async (accounts) => {
     let vault, wallet
     const user = accounts[0]
     const externalAddress = 'swth1ju4rl33f6c8ptgch8gtmqqt85xrs3zz9txp4n5'
+    const nativeAddress = '0x359EF15fB3E86dDF050228f03336979fA5212480'
 
     beforeEach(async () => {
         vault = await getVault()
         wallet = await Wallet.new()
         jrc = await getJrc()
 
-        await wallet.initialize(externalAddress, vault.address)
+        await wallet.initialize(nativeAddress, externalAddress, vault.address)
         await jrc.mint(user, 42)
     })
 
