@@ -1,6 +1,13 @@
+const Vault = artifacts.require('Vault')
 const WalletFactory = artifacts.require('WalletFactory')
 const Wallet = artifacts.require('Wallet')
 
+const Web3 = require('web3')
+const web3 = new Web3(Web3.givenProvider)
+
+const { ETHER_ADDR } = require('../constants')
+
+async function getVault() { return await Vault.deployed() }
 async function getWalletFactory() { return await WalletFactory.deployed() }
 
 async function createWallet({ nativeAddress, externalAddress, vaultAddress }) {
@@ -38,10 +45,21 @@ async function assertReversion(promise, errorMessage) {
     assert.fail('Expected an EVM revert but no error was encountered')
 }
 
+async function assertBalance(user, token, amount) {
+    if (token === ETHER_ADDR) {
+        await assertAsync(web3.eth.getBalance(user), amount)
+        return
+    }
+    await assertAsync(token.balanceOf(user), amount)
+}
+
 module.exports = {
+    web3,
+    getVault,
     getWalletFactory,
     createWallet,
     assertEqual,
     assertAsync,
-    assertReversion
+    assertReversion,
+    assertBalance
 }
