@@ -2,7 +2,7 @@ const Wallet = artifacts.require('Wallet')
 const { getJrc, getVault, assertBalance, assertEqual } = require('../utils')
 
 contract('Test sendETH', async (accounts) => {
-    let vault, wallet
+    let vault, wallet, jrc
     const user = accounts[0]
     const externalAddress = 'swth1ju4rl33f6c8ptgch8gtmqqt85xrs3zz9txp4n5'
     const nativeAddress = '0x359EF15fB3E86dDF050228f03336979fA5212480'
