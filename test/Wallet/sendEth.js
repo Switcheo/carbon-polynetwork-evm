@@ -4,6 +4,7 @@ const { ETHER_ADDR } = require('../constants')
 
 contract('Test sendETH', async (accounts) => {
     let vault, wallet
+    const senderAddress = 'swthval'
     const nativeAddress = '0x359EF15fB3E86dDF050228f03336979fA5212480'
     const externalAddress = 'swth1ju4rl33f6c8ptgch8gtmqqt85xrs3zz9txp4n5'
 
@@ -20,7 +21,7 @@ contract('Test sendETH', async (accounts) => {
             await assertBalance(vault.address, ETHER_ADDR, '0')
             await assertBalance(wallet.address, ETHER_ADDR, amount)
 
-            await wallet.sendETH()
+            await wallet.sendETH(senderAddress)
             await assertBalance(vault.address, ETHER_ADDR, amount)
             await assertBalance(wallet.address, ETHER_ADDR, '0')
         })

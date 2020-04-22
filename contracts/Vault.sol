@@ -16,12 +16,13 @@ contract Vault {
         address assetId,
         uint256 amount,
         string externalAddress,
-        address sender
+        string sender
     );
 
     function deposit(
         address _user,
-        string calldata _externalAddress
+        string calldata _externalAddress,
+        string calldata _senderAddress
     )
         external
         payable
@@ -31,7 +32,7 @@ contract Vault {
             ETHER_ADDR,
             msg.value,
             _externalAddress,
-            tx.origin
+            _senderAddress
         );
     }
 
@@ -39,7 +40,8 @@ contract Vault {
         address _user,
         address _assetId,
         uint256 _amount,
-        string calldata _externalAddress
+        string calldata _externalAddress,
+        string calldata _senderAddress
     )
         external
     {
@@ -54,7 +56,7 @@ contract Vault {
             _assetId,
             receivedAmount,
             _externalAddress,
-            tx.origin
+            _senderAddress
         );
     }
 

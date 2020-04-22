@@ -4,6 +4,7 @@ const { ETHER_ADDR } = require('../constants')
 
 contract('Test createWalletAndSendEth', async (accounts) => {
     const user = accounts[0]
+    const senderAddress = 'swthval'
     let factory, vault
 
     beforeEach(async () => {
@@ -26,7 +27,12 @@ contract('Test createWalletAndSendEth', async (accounts) => {
 
             await assertReversion(Wallet.at(expectedAddress), 'Cannot create instance of Wallet; no code at address')
 
-            const result = await factory.createWalletAndSendEth(nativeAddress, externalAddress, vaultAddress)
+            const result = await factory.createWalletAndSendEth(
+                nativeAddress,
+                externalAddress,
+                vaultAddress,
+                senderAddress
+            )
             console.log('Gas used:', result.receipt.gasUsed)
 
             await assertBalance(vault.address, ETHER_ADDR, amount)

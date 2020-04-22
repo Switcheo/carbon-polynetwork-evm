@@ -34,7 +34,8 @@ contract WalletFactory {
     function createWalletAndSendEth(
         address _nativeAddress,
         string calldata _externalAddress,
-        address _vaultAddress
+        address _vaultAddress,
+        string calldata _senderAddress
     )
         external
         returns (address)
@@ -54,7 +55,7 @@ contract WalletFactory {
             _vaultAddress
         );
 
-        wallet.sendETH();
+        wallet.sendETH(_senderAddress);
 
         return address(wallet);
     }
@@ -65,7 +66,8 @@ contract WalletFactory {
         address _vaultAddress,
         address _assetId,
         uint256 _amount,
-        uint256 _maxAllowance
+        uint256 _maxAllowance,
+        string calldata _senderAddress
     )
         external
         returns (address)
@@ -88,7 +90,8 @@ contract WalletFactory {
         wallet.sendERC20Tokens(
             _assetId,
             _amount,
-            _maxAllowance
+            _maxAllowance,
+            _senderAddress
         );
 
         return address(wallet);

@@ -1,8 +1,9 @@
 const Wallet = artifacts.require('Wallet')
 const { getJrc, getWalletFactory, getVault, assertAsync, assertReversion, assertBalance } = require('../utils')
 
-contract('Test createWalletAndSendEth', async (accounts) => {
+contract('Test createWalletAndSendERC20Tokens', async (accounts) => {
     const user = accounts[0]
+    const senderAddress = 'swthval'
     let factory, vault, jrc
 
     beforeEach(async () => {
@@ -33,7 +34,8 @@ contract('Test createWalletAndSendEth', async (accounts) => {
                 vaultAddress,
                 jrc.address,
                 '42',
-                '100'
+                '100',
+                senderAddress
             )
             console.log('Gas used:', result.receipt.gasUsed)
 
