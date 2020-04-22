@@ -5,6 +5,47 @@ import "./Wallet.sol";
 contract WalletFactory {
     bytes public constant SALT_PREFIX = "switcheo-eth-wallet-factory-v1";
 
+    function getWalletAddress(
+        address _nativeAddress,
+        string memory _externalAddress,
+        address _vaultAddress,
+        bytes32 _bytecodeHash
+    )
+        public
+        view
+        returns (address)
+    {
+        bytes32 salt = getSalt(
+            _nativeAddress,
+            _externalAddress,
+            _vaultAddress
+        );
+
+        bytes32 data = keccak256(
+            abi.encodePacked(bytes1(0xff), address(this), salt, _bytecodeHash)
+        );
+
+        return address(bytes20(data << 96));
+    }
+
+    function getSalt(
+        address _nativeAddress,
+        string memory _externalAddress,
+        address _vaultAddress
+    )
+        public
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encodePacked(
+            SALT_PREFIX,
+            _nativeAddress,
+            _externalAddress,
+            _vaultAddress
+        ));
+    }
+
+
     function createWallet(
         address _nativeAddress,
         string calldata _externalAddress,
@@ -13,12 +54,11 @@ contract WalletFactory {
         external
         returns (address)
     {
-        bytes32 salt = keccak256(abi.encodePacked(
-            SALT_PREFIX,
+        bytes32 salt = getSalt(
             _nativeAddress,
             _externalAddress,
             _vaultAddress
-        ));
+        );
 
         Wallet wallet = new Wallet{salt: salt}();
 

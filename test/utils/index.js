@@ -12,6 +12,17 @@ async function getVault() { return await Vault.deployed() }
 async function getWalletFactory() { return await WalletFactory.deployed() }
 async function getJrc() { return await JRCoin.deployed() }
 
+function getWalletBytecodeHash() {
+    const encodedParams = web3.eth.abi.encodeParameters([], []).slice(2)
+    const constructorByteCode = `${Wallet.bytecode}${encodedParams}`
+    return web3.utils.keccak256(constructorByteCode)
+}
+
+async function getWalletAddress(nativeAddress, externalAddress, vaultAddress) {
+    const factory = await getWalletFactory()
+    return factory.getWalletAddress(nativeAddress, externalAddress, vaultAddress, getWalletBytecodeHash())
+}
+
 async function createWallet({ nativeAddress, externalAddress, vaultAddress }) {
     const factory = await getWalletFactory()
     const walletAddress = await factory.createWallet.call(nativeAddress, externalAddress, vaultAddress)
@@ -58,7 +69,9 @@ async function assertBalance(user, token, amount) {
 module.exports = {
     web3,
     getVault,
+    getWalletBytecodeHash,
     getWalletFactory,
+    getWalletAddress,
     getJrc,
     createWallet,
     assertEqual,
