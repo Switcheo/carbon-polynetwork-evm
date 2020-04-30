@@ -19,6 +19,10 @@ contract Vault {
         string sender
     );
 
+    event SignatureValidated(
+        address user
+    );
+
     function deposit(
         address _user,
         string calldata _externalAddress,
@@ -59,6 +63,26 @@ contract Vault {
             _senderAddress
         );
     }
+
+    function validateSignature(
+        string calldata _message,
+        address[] calldata _users,
+        uint8[] calldata _v,
+        bytes32[] calldata _r,
+        bytes32[] calldata _s
+    )
+        external
+    {
+        for (uint256 i = 0; i < _users.length; i++) {
+            bytes32 prefixedHash = keccak256(abi.encodePacked(
+                "\x19Ethereum Signed Message:\n32",
+                _message
+            ));
+            ecrecover(prefixedHash, _v[i], _r[i], _s[i]);
+        }
+        emit SignatureValidated(_users[0]);
+    }
+
 
     function withdraw(
         address payable _receivingAddress,
