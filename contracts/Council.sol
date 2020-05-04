@@ -58,7 +58,7 @@ contract Council {
             _nonce
         ));
 
-        validateSigners(
+        validateSignatures(
             message,
             _signers,
             _v,
@@ -82,7 +82,7 @@ contract Council {
         usedNonces[_nonce] = true;
     }
 
-    function validateSigners(
+    function validateSignatures(
         bytes32 _message,
         address[] memory _signers,
         uint8[] memory _v,

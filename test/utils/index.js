@@ -159,17 +159,7 @@ async function signMessage(message, signer) {
     return parseSignature(signature)
 }
 
-async function getUpdateVotingPowersParams({
-    voters, powers, totalPower, nonce, signers
-}) {
-    const message = web3.utils.soliditySha3(
-        { type: 'string', value: 'updateVotingPowers' },
-        { type: 'address[]', value: voters },
-        { type: 'uint256[]', value: powers },
-        { type: 'uint256', value: totalPower },
-        { type: 'uint256', value: nonce }
-    )
-
+async function getValidateSignatureParams({ message, signers }) {
     signers.sort((a, b) => {
         a = web3.utils.toBN(a)
         b = web3.utils.toBN(b)
@@ -187,14 +177,36 @@ async function getUpdateVotingPowersParams({
     }
 
     return [
-        voters,
-        powers,
-        totalPower,
-        nonce,
+        message,
         signers,
         signatures.v,
         signatures.r,
         signatures.s
+    ]
+}
+
+async function getUpdateVotingPowersParams({
+    voters, powers, totalPower, nonce, signers
+}) {
+    const message = web3.utils.soliditySha3(
+        { type: 'string', value: 'updateVotingPowers' },
+        { type: 'address[]', value: voters },
+        { type: 'uint256[]', value: powers },
+        { type: 'uint256', value: totalPower },
+        { type: 'uint256', value: nonce }
+    )
+
+    const signatureParams = await getValidateSignatureParams({ message, signers })
+
+    return [
+        voters,
+        powers,
+        totalPower,
+        nonce,
+        signatureParams[1],
+        signatureParams[2],
+        signatureParams[3],
+        signatureParams[4]
     ]
 }
 
@@ -213,5 +225,6 @@ module.exports = {
     assertEvents,
     assertBalance,
     signMessage,
+    getValidateSignatureParams,
     getUpdateVotingPowersParams
 }
