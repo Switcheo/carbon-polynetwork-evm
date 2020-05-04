@@ -130,6 +130,6 @@ contract Council {
         }
 
         // require that voting power of signers is more than 2/3 of totalVotingPower
-        require(votingPower * 3 > 2 * totalVotingPower);
+        require(votingPower * 3 > 2 * totalVotingPower, "Insufficent voting power");
     }
 }
