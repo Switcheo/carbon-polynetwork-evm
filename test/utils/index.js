@@ -68,6 +68,19 @@ async function assertBalance(user, token, amount) {
     await assertAsync(token.balanceOf(user), amount)
 }
 
+function parseSignature(signature) {
+    const sig = signature.slice(2)
+    const v = web3.utils.hexToNumber('0x' + sig.slice(128, 130)) + 27
+    const r = `0x${sig.slice(0, 64)}`
+    const s = `0x${sig.slice(64, 128)}`
+    return { v, r, s }
+}
+
+async function signMessage(message, signer) {
+    const signature = await web3.eth.sign(message, signer)
+    return parseSignature(signature)
+}
+
 module.exports = {
     web3,
     getVault,
@@ -80,5 +93,6 @@ module.exports = {
     assertEqual,
     assertAsync,
     assertReversion,
-    assertBalance
+    assertBalance,
+    signMessage
 }

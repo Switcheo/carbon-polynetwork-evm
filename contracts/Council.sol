@@ -50,7 +50,8 @@ contract Council {
             "Nonce has already been used"
         );
 
-        bytes32 messageHash = keccak256(abi.encodePacked(
+        bytes32 message = keccak256(abi.encodePacked(
+            "updateVotingPowers",
             _voters,
             _powers,
             _totalPower,
@@ -58,7 +59,7 @@ contract Council {
         ));
 
         validateSigners(
-            messageHash,
+            message,
             _signers,
             _v,
             _r,
@@ -82,7 +83,7 @@ contract Council {
     }
 
     function validateSigners(
-        bytes32 _messageHash,
+        bytes32 _message,
         address[] memory _signers,
         uint8[] memory _v,
         bytes32[] memory _r,
@@ -103,6 +104,11 @@ contract Council {
             "Invalid input lengths"
         );
 
+        bytes32 prefixedMessage = keccak256(abi.encodePacked(
+            "\x19Ethereum Signed Message:\n32",
+            _message
+        ));
+
         uint256 prevSignerValue = 0;
         uint256 votingPower = 0;
         for (uint256 i = 0; i < _signers.length; i++) {
@@ -115,7 +121,7 @@ contract Council {
                 "Invalid signers arragement"
             );
             require(
-                signer == ecrecover(_messageHash, _v[i], _r[i], _s[i]),
+                signer == ecrecover(prefixedMessage, _v[i], _r[i], _s[i]),
                 "Invalid signature"
             );
 
