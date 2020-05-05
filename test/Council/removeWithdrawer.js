@@ -1,12 +1,11 @@
-const { getVault, getCouncil, getUpdateVotingPowersParams, getAddWithdrawerParams,
+const { getVault, getCouncil, getUpdateVotingPowersParams, getRemoveWithdrawerParams,
         assertAsync, assertReversion } = require('../utils')
 
-contract('Test addWithdrawer', async (accounts) => {
+contract('Test removeWithdrawer', async (accounts) => {
     let council, vault
     const deployer = accounts[0]
     const user1 = accounts[1]
     const user2 = accounts[2]
-    const user3 = accounts[3]
 
     beforeEach(async () => {
         vault = await getVault()
@@ -24,33 +23,29 @@ contract('Test addWithdrawer', async (accounts) => {
     })
 
     contract('when parameters are valid', async () => {
-        it('adds a withdrawer to the vault contract', async () => {
-            await assertAsync(vault.withdrawers(user3), false)
-            const params = await getAddWithdrawerParams({
-                withdrawer: user3,
-                nonce: 1,
+        it('removes withdrawer access', async () => {
+            await assertAsync(vault.withdrawers(council.address), true)
+            const params = await getRemoveWithdrawerParams({
                 signers: [user1, user2]
             })
 
-            await council.addWithdrawer(...params)
-            await assertAsync(vault.withdrawers(user3), true)
+            await council.removeWithdrawer(...params)
+            await assertAsync(vault.withdrawers(council.address), false)
         })
     })
 
     contract('when there is insufficient voting power', async () => {
         it('throws an error', async () => {
-            await assertAsync(vault.withdrawers(user3), false)
-            const params = await getAddWithdrawerParams({
-                withdrawer: user3,
-                nonce: 1,
+            await assertAsync(vault.withdrawers(council.address), true)
+            const params = await getRemoveWithdrawerParams({
                 signers: [user2]
             })
 
             await assertReversion(
-                council.addWithdrawer(...params),
+                council.removeWithdrawer(...params),
                 'Insufficent voting power'
             )
-            await assertAsync(vault.withdrawers(user3), false)
+            await assertAsync(vault.withdrawers(council.address), true)
         })
     })
 })

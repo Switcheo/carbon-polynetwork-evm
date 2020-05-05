@@ -229,6 +229,23 @@ async function getAddWithdrawerParams({ withdrawer, nonce, signers }) {
     ]
 }
 
+async function getRemoveWithdrawerParams({ signers }) {
+    const council = await getCouncil()
+    const message = web3.utils.soliditySha3(
+        { type: 'string', value: 'removeWithdrawer' },
+        { type: 'address', value: council.address }
+    )
+
+    const signatureParams = await getValidateSignatureParams({ message, signers })
+
+    return [
+        signatureParams[1],
+        signatureParams[2],
+        signatureParams[3],
+        signatureParams[4]
+    ]
+}
+
 module.exports = {
     web3,
     getVault,
@@ -246,5 +263,6 @@ module.exports = {
     signMessage,
     getValidateSignatureParams,
     getUpdateVotingPowersParams,
-    getAddWithdrawerParams
+    getAddWithdrawerParams,
+    getRemoveWithdrawerParams
 }

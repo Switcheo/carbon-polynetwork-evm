@@ -53,6 +53,30 @@ contract Council {
         vault.addWithdrawer(_withdrawer, _nonce);
     }
 
+    function removeWithdrawer(
+        address[] memory _signers,
+        uint8[] memory _v,
+        bytes32[] memory _r,
+        bytes32[] memory _s
+    )
+        public
+    {
+        bytes32 message = keccak256(abi.encodePacked(
+            "removeWithdrawer",
+            address(this)
+        ));
+
+        validateSignatures(
+            message,
+            _signers,
+            _v,
+            _r,
+            _s
+        );
+
+        vault.removeWithdrawer();
+    }
+
     function updateVotingPowers(
         address[] memory _voters,
         uint256[] memory _powers,
