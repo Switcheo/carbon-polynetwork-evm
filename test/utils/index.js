@@ -188,8 +188,10 @@ async function getValidateSignatureParams({ message, signers }) {
 async function getUpdateVotingPowersParams({
     voters, powers, totalPower, nonce, signers
 }) {
+    const council = await getCouncil()
     const message = web3.utils.soliditySha3(
         { type: 'string', value: 'updateVotingPowers' },
+        { type: 'address', value: council.address },
         { type: 'address[]', value: voters },
         { type: 'uint256[]', value: powers },
         { type: 'uint256', value: totalPower },
@@ -211,8 +213,10 @@ async function getUpdateVotingPowersParams({
 }
 
 async function getAddWithdrawerParams({ withdrawer, nonce, signers }) {
+    const council = await getCouncil()
     const message = web3.utils.soliditySha3(
         { type: 'string', value: 'addWithdrawer' },
+        { type: 'address', value: council.address },
         { type: 'address', value: withdrawer },
         { type: 'uint256', value: nonce }
     )

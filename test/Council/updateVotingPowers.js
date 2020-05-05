@@ -89,6 +89,7 @@ contract('Test updateVotingPowers', async (accounts) => {
 
             const message = web3.utils.soliditySha3(
                 { type: 'string', value: 'updateVotingPowers' },
+                { type: 'address', value: council.address },
                 { type: 'address[]', value: voters },
                 { type: 'uint256[]', value: powers },
                 { type: 'uint256', value: totalPower },

@@ -79,6 +79,7 @@ contract Vault {
 
         bytes32 message = keccak256(abi.encodePacked(
             "addWithdrawer",
+            address(this),
             _withdrawer,
             _nonce
         ));

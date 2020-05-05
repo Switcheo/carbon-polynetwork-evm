@@ -38,6 +38,7 @@ contract Council {
     {
         bytes32 message = keccak256(abi.encodePacked(
             "addWithdrawer",
+            address(this),
             _withdrawer,
             _nonce
         ));
@@ -101,6 +102,7 @@ contract Council {
 
         bytes32 message = keccak256(abi.encodePacked(
             "updateVotingPowers",
+            address(this),
             _voters,
             _powers,
             _totalPower,
