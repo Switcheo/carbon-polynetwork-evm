@@ -1,7 +1,7 @@
 const Wallet = artifacts.require('Wallet')
 const { getJrc, getVault, assertBalance, assertEqual } = require('../utils')
 
-contract('Test sendETH', async (accounts) => {
+contract('Test sendERC20Tokens', async (accounts) => {
     let vault, wallet, jrc
     const user = accounts[0]
     const senderAddress = 'swthval'

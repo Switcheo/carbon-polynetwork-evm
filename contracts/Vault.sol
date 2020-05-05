@@ -10,6 +10,8 @@ contract Vault {
     using SafeMath for uint256;
 
     address private constant ETHER_ADDR = address(0x8000003c);
+    mapping(address => bool) public withdrawers;
+    address public lastWithdrawer;
 
     event Deposit(
         address user,
@@ -18,6 +20,10 @@ contract Vault {
         string externalAddress,
         string sender
     );
+
+    constructor() public {
+        withdrawers[msg.sender] = true;
+    }
 
     function deposit(
         address _user,
@@ -58,6 +64,13 @@ contract Vault {
             _externalAddress,
             _senderAddress
         );
+    }
+
+    function addWithdrawer(address _withdrawer) external {
+        require(withdrawers[msg.sender] == true, "Unauthorised sender");
+        require(withdrawers[_withdrawer] == false, "Withdrawer already added");
+        withdrawers[_withdrawer] = true;
+        lastWithdrawer = _withdrawer;
     }
 
     function withdraw(
