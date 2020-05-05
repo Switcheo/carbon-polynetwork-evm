@@ -11,6 +11,7 @@ contract Vault {
 
     address private constant ETHER_ADDR = address(0x8000003c);
     mapping(address => bool) public withdrawers;
+    mapping(bytes32 => bool) public usedHashes;
 
     event Deposit(
         address user,
@@ -65,10 +66,29 @@ contract Vault {
         );
     }
 
-    function addWithdrawer(address _withdrawer) external {
-        require(withdrawers[msg.sender] == true, "Unauthorised sender");
-        require(withdrawers[_withdrawer] == false, "Withdrawer already added");
+    function addWithdrawer(address _withdrawer, uint256 _nonce) external {
+        require(
+            withdrawers[msg.sender] == true,
+            "Unauthorised sender"
+        );
+
+        require(
+            withdrawers[_withdrawer] == false,
+            "Withdrawer already added"
+        );
+
+        bytes32 message = keccak256(abi.encodePacked(
+            "addWithdrawer",
+            _withdrawer,
+            _nonce
+        ));
+        require(
+            usedHashes[message] == false,
+            "Nonce already used"
+        );
+
         withdrawers[_withdrawer] = true;
+        usedHashes[message] = true;
     }
 
     function removeWithdrawer() external {

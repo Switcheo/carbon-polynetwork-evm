@@ -210,6 +210,25 @@ async function getUpdateVotingPowersParams({
     ]
 }
 
+async function getAddWithdrawerParams({ withdrawer, nonce, signers }) {
+    const message = web3.utils.soliditySha3(
+        { type: 'string', value: 'addWithdrawer' },
+        { type: 'address', value: withdrawer },
+        { type: 'uint256', value: nonce }
+    )
+
+    const signatureParams = await getValidateSignatureParams({ message, signers })
+
+    return [
+        withdrawer,
+        nonce,
+        signatureParams[1],
+        signatureParams[2],
+        signatureParams[3],
+        signatureParams[4]
+    ]
+}
+
 module.exports = {
     web3,
     getVault,
@@ -226,5 +245,6 @@ module.exports = {
     assertBalance,
     signMessage,
     getValidateSignatureParams,
-    getUpdateVotingPowersParams
+    getUpdateVotingPowersParams,
+    getAddWithdrawerParams
 }

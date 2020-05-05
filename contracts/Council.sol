@@ -1,13 +1,15 @@
 pragma solidity 0.6.5;
 
 import "./lib/math/SafeMath.sol";
+import "./Vault.sol";
 
 contract Council {
     using SafeMath for uint256;
 
     mapping(address => uint256) public votingPowers;
-    mapping(uint256 => bool) public usedNonces;
+    mapping(bytes32 => bool) public usedHashes;
     uint256 public totalVotingPower;
+    Vault vault;
 
     event VotingPowerIncrease(
         address voter,
@@ -18,9 +20,37 @@ contract Council {
         uint256 amount
     );
 
-    constructor() public {
+    constructor(address vaultAddress) public {
         totalVotingPower = 100;
         votingPowers[msg.sender] = 100;
+        vault = Vault(vaultAddress);
+    }
+
+    function addWithdrawer(
+        address _withdrawer,
+        uint256 _nonce,
+        address[] memory _signers,
+        uint8[] memory _v,
+        bytes32[] memory _r,
+        bytes32[] memory _s
+    )
+        public
+    {
+        bytes32 message = keccak256(abi.encodePacked(
+            "addWithdrawer",
+            _withdrawer,
+            _nonce
+        ));
+
+        validateSignatures(
+            message,
+            _signers,
+            _v,
+            _r,
+            _s
+        );
+
+        vault.addWithdrawer(_withdrawer, _nonce);
     }
 
     function updateVotingPowers(
@@ -45,11 +75,6 @@ contract Council {
             "Invalid input lengths"
         );
 
-        require(
-            usedNonces[_nonce] == false,
-            "Nonce has already been used"
-        );
-
         bytes32 message = keccak256(abi.encodePacked(
             "updateVotingPowers",
             _voters,
@@ -57,6 +82,11 @@ contract Council {
             _totalPower,
             _nonce
         ));
+
+        require(
+            usedHashes[message] == false,
+            "Nonce has already been used"
+        );
 
         validateSignatures(
             message,
@@ -79,7 +109,7 @@ contract Council {
             }
         }
 
-        usedNonces[_nonce] = true;
+        usedHashes[message] = true;
     }
 
     function validateSignatures(
