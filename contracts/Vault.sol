@@ -11,7 +11,6 @@ contract Vault {
 
     address private constant ETHER_ADDR = address(0x8000003c);
     mapping(address => bool) public withdrawers;
-    address public lastWithdrawer;
 
     event Deposit(
         address user,
@@ -70,7 +69,11 @@ contract Vault {
         require(withdrawers[msg.sender] == true, "Unauthorised sender");
         require(withdrawers[_withdrawer] == false, "Withdrawer already added");
         withdrawers[_withdrawer] = true;
-        lastWithdrawer = _withdrawer;
+    }
+
+    function removeWithdrawer() external {
+        require(withdrawers[msg.sender] == true, "Withdrawer already removed");
+        withdrawers[msg.sender] = false;
     }
 
     function withdraw(

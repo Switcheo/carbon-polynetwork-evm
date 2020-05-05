@@ -27,4 +27,15 @@ contract('Test addWithdrawer', async (accounts) => {
             await assertAsync(vault.withdrawers(user1), false)
         })
     })
+
+    contract('when withdrawer has already been added', async () => {
+        it('throws an error', async () => {
+            await vault.addWithdrawer(user1, { from: deployer })
+            await assertReversion(
+                vault.addWithdrawer(user1, { from: deployer }),
+                'Withdrawer already added'
+            )
+            await assertAsync(vault.withdrawers(user1), true)
+        })
+    })
 })
