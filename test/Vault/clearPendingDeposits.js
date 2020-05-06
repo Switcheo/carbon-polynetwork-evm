@@ -38,18 +38,33 @@ contract('Test deposit', async (accounts) => {
         })
     })
 
-    contract('when amount is 0', async () => {
-        it('it throws an error', async () => {
-            const amount = '0'
-            await assertReversion(
-                vault.deposit(
-                    user,
-                    externalAddress,
-                    senderAddress,
-                    { from: user, value: amount }
-                ),
-                'Deposit amount cannot be zero'
+    contract('when the sender is not authorised', async () => {
+        it('throws an error', async () => {
+            const nonce = 0
+            const amount = web3.utils.toWei('1', 'ether')
+            const message = web3.utils.soliditySha3(
+                { type: 'string', value: 'pendingDeposit' },
+                { type: 'address', value: vault.address },
+                { type: 'address', value: user },
+                { type: 'address', value: ETHER_ADDR },
+                { type: 'uint256', value: amount },
+                { type: 'uint256', value: nonce }
             )
+            await assertAsync(vault.pendingDeposits(message), false)
+
+            await vault.deposit(
+                user,
+                externalAddress,
+                senderAddress,
+                { from: user, value: amount }
+            )
+            await assertAsync(vault.pendingDeposits(message), true)
+
+            await assertReversion(
+                vault.clearPendingDeposits([message], { from: user }),
+                'Unauthorised sender'
+            )
+            await assertAsync(vault.pendingDeposits(message), true)
         })
     })
 })
