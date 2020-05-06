@@ -130,7 +130,10 @@ contract Vault {
     }
 
     function removeWithdrawer() external {
-        require(withdrawers[msg.sender] == true, "Withdrawer already removed");
+        require(
+            withdrawers[msg.sender] == true,
+            "Withdrawer already removed"
+        );
         withdrawers[msg.sender] = false;
     }
 
@@ -141,6 +144,11 @@ contract Vault {
     )
         external
     {
+        require(
+            withdrawers[msg.sender] == true,
+            "Unauthorised sender"
+        );
+
         _withdraw(
             _receivingAddress,
             _assetId,
@@ -175,16 +183,6 @@ contract Vault {
     )
         private
     {
-        if (_assetId == ETHER_ADDR) {
-            _receivingAddress.transfer(_amount);
-            return;
-        }
-
-        _transferTokensOut(
-            _receivingAddress,
-            _assetId,
-            _amount
-        );
     }
 
     /// @notice Transfers tokens into the contract

@@ -2,6 +2,7 @@ pragma solidity 0.6.5;
 
 import "./lib/math/SafeMath.sol";
 import "./Vault.sol";
+import "./lib/cryptography/MerkleProof.sol";
 
 contract Council {
     using SafeMath for uint256;
@@ -22,6 +23,14 @@ contract Council {
     event VotingPowerDecrease(
         address voter,
         uint256 amount
+    );
+
+    event Withdraw(
+        address receivingAddress,
+        address assetId,
+        uint256 amount,
+        uint256 nonce,
+        uint256 networkFee
     );
 
     constructor(address vaultAddress) public {
@@ -88,8 +97,91 @@ contract Council {
             // add 70k gas for buffer, 21k for base transaction fee
             // 49k for storage and event emission fees
             uint256 networkFee = (startGas - gasleft() + 70000) * tx.gasprice;
+            if (networkFee == 0) {
+                networkFee = 1;
+            }
             withdrawalHashes[withdrawalHash] = networkFee;
         }
+    }
+
+    function withdraw(
+        bytes32 withdrawalRoot,
+        bytes32[] memory proof,
+        address payable _receivingAddress,
+        address _assetId,
+        uint256 _amount,
+        uint256 _conversionNumerator,
+        uint256 _conversionDenominator,
+        uint256 _nonce
+    )
+        public
+    {
+        uint256 startGas = gasleft();
+
+        require(
+            votingPowers[msg.sender] != 0,
+            "Invalid sender"
+        );
+
+        require(
+            withdrawalHashes[withdrawalRoot] != 0,
+            "Withdrawal root does not exist in store"
+        );
+
+        bytes32 withdrawalLeaf = keccak256(abi.encodePacked(
+            "withdraw",
+            address(this),
+            _receivingAddress,
+            _assetId,
+            _amount,
+            _conversionNumerator,
+            _conversionDenominator,
+            _nonce
+        ));
+
+        require(
+            usedHashes[withdrawalLeaf] == false,
+            "Withdrawal already executed"
+        );
+        usedHashes[withdrawalLeaf] = true;
+
+        require(
+            MerkleProof.verify(proof, withdrawalRoot, withdrawalLeaf) == true,
+            "Invalid proof"
+        );
+
+        uint256 beforeTransferGas = gasleft();
+        // withdraw 10% of the amount first to estimate the network fee
+        vault.withdraw(
+            _receivingAddress,
+            _assetId,
+            _amount / 2
+        );
+        uint256 transferCost = beforeTransferGas - gasleft();
+
+        // double count the transfer cost as a second transfer will be performed
+        uint256 networkFee = (startGas - gasleft() + transferCost) * tx.gasprice + withdrawalHashes[withdrawalRoot];
+        uint256 convertedNetworkFee = networkFee * _conversionNumerator / _conversionDenominator;
+
+        // the remaining amount to transfer is less than the network fee so just return
+        if (_amount / 2 < convertedNetworkFee) {
+            return;
+        }
+
+        // withdraw the remaining amount after subtracting the network fee
+        vault.withdraw(
+            _receivingAddress,
+            _assetId,
+            _amount / 2 - convertedNetworkFee
+        );
+
+        emit Withdraw(
+            _receivingAddress,
+            _assetId,
+            _amount,
+            _nonce,
+            convertedNetworkFee
+        );
     }
 
     function addWithdrawer(
