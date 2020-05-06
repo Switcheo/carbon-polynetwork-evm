@@ -10,6 +10,8 @@ const web3 = new Web3(Web3.givenProvider)
 const { ETHER_ADDR } = require('../constants')
 
 const abiDecoder = require('abi-decoder')
+abiDecoder.addABI(JRCoin.abi)
+abiDecoder.addABI(Vault.abi)
 abiDecoder.addABI(Council.abi)
 
 async function getVault() { return await Vault.deployed() }

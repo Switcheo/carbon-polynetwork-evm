@@ -10,7 +10,11 @@ interface ERC20 {
 }
 
 interface Vault {
-    function deposit(address _user, string calldata _externalAddress, string calldata _senderAddress) external payable;
+    function deposit(
+        address _user,
+        string calldata _externalAddress,
+        string calldata _senderAddress
+    ) external payable;
 
     function depositToken(
         address _user,
@@ -28,7 +32,6 @@ contract Wallet {
     address public nativeAddress;
     string public externalAddress;
     address public vaultAddress;
-    uint256 public nonce;
 
     bool isInitialized;
 
@@ -49,7 +52,11 @@ contract Wallet {
     function sendETH(string calldata _senderAddress) external {
         uint256 amount = address(this).balance;
         Vault vault = Vault(vaultAddress);
-        vault.deposit{value: amount}(nativeAddress, externalAddress, _senderAddress);
+        vault.deposit{value: amount}(
+            nativeAddress,
+            externalAddress,
+            _senderAddress
+        );
     }
 
     function sendERC20Tokens(

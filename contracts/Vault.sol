@@ -10,8 +10,11 @@ contract Vault {
     using SafeMath for uint256;
 
     address private constant ETHER_ADDR = address(0x8000003c);
+
+    uint256 public depositNonce;
     mapping(address => bool) public withdrawers;
     mapping(bytes32 => bool) public usedHashes;
+    mapping(bytes32 => bool) public pendingDeposits;
 
     event Deposit(
         address user,
@@ -33,6 +36,17 @@ contract Vault {
         external
         payable
     {
+        require(
+            msg.value > 0,
+            "Deposit amount cannot be zero"
+        );
+
+        _storePendingDeposit(
+            _user,
+            ETHER_ADDR,
+            msg.value
+        );
+
         emit Deposit(
             _user,
             ETHER_ADDR,
@@ -55,6 +69,17 @@ contract Vault {
             msg.sender,
             _assetId,
             _amount
+        );
+
+        require(
+            receivedAmount > 0,
+            "Deposit amount cannot be zero"
+        );
+
+        _storePendingDeposit(
+            _user,
+            _assetId,
+            receivedAmount
         );
 
         emit Deposit(
@@ -109,6 +134,26 @@ contract Vault {
             _assetId,
             _amount
         );
+    }
+
+    function _storePendingDeposit(
+        address _user,
+        address _assetId,
+        uint256 _amount
+    )
+        private
+    {
+        bytes32 message = keccak256(abi.encodePacked(
+            "pendingDeposit",
+            address(this),
+            _user,
+            _assetId,
+            _amount,
+            depositNonce
+        ));
+
+        depositNonce++;
+        pendingDeposits[message] = true;
     }
 
     function _withdraw(
