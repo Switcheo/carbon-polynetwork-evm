@@ -1,4 +1,4 @@
-const { getVault, assertBalance, assertEvents, assertAsync, assertReversion } = require('../utils')
+const { getVault, assertAsync, assertReversion } = require('../utils')
 const { ETHER_ADDR } = require('../constants')
 
 contract('Test deposit', async (accounts) => {

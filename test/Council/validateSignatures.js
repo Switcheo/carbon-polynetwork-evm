@@ -6,10 +6,9 @@ contract('Test validateSignatures', async (accounts) => {
     const deployer = accounts[0]
     const user1 = accounts[1]
     const user2 = accounts[2]
-    const message = web3.utils.soliditySha3({
-        type: 'string',
-        value: 'example message'
-    })
+    const message = web3.utils.soliditySha3(
+        { type: 'string', value: 'example message' }
+    )
 
     beforeEach(async () => {
         council = await getCouncil()

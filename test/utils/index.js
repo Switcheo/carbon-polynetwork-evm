@@ -252,6 +252,33 @@ async function getRemoveWithdrawerParams({ signers }) {
     ]
 }
 
+async function getAddMerkleRootParams({
+    merkleRoot, blockTime, processedDeposits, withdrawalHash, signers
+}) {
+    const council = await getCouncil()
+    const message = web3.utils.soliditySha3(
+        { type: 'string', value: 'addMerkleRoot' },
+        { type: 'address', value: council.address },
+        { type: 'bytes32', value: merkleRoot },
+        { type: 'uint256', value: blockTime },
+        { type: 'bytes32[]', value: processedDeposits },
+        { type: 'bytes32', value: withdrawalHash }
+    )
+
+    const signatureParams = await getValidateSignatureParams({ message, signers })
+
+    return [
+        merkleRoot,
+        blockTime,
+        processedDeposits,
+        withdrawalHash,
+        signatureParams[1],
+        signatureParams[2],
+        signatureParams[3],
+        signatureParams[4]
+    ]
+}
+
 module.exports = {
     web3,
     getVault,
@@ -270,5 +297,6 @@ module.exports = {
     getValidateSignatureParams,
     getUpdateVotingPowersParams,
     getAddWithdrawerParams,
-    getRemoveWithdrawerParams
+    getRemoveWithdrawerParams,
+    getAddMerkleRootParams
 }

@@ -8,6 +8,10 @@ contract Council {
 
     mapping(address => uint256) public votingPowers;
     mapping(bytes32 => bool) public usedHashes;
+    mapping(bytes32 => uint256) public withdrawalHashes;
+    mapping(uint256 => bytes32) public merkleRoots;
+
+    uint256 public latestBlockTime;
     uint256 public totalVotingPower;
     Vault vault;
 
@@ -24,6 +28,68 @@ contract Council {
         totalVotingPower = 100;
         votingPowers[msg.sender] = 100;
         vault = Vault(vaultAddress);
+    }
+
+    function addMerkleRoot(
+        bytes32 merkleRoot,
+        uint256 blockTime,
+        bytes32[] memory processedDeposits,
+        bytes32 withdrawalHash,
+        address[] memory _signers,
+        uint8[] memory _v,
+        bytes32[] memory _r,
+        bytes32[] memory _s
+    )
+        public
+    {
+        uint256 startGas = gasleft();
+
+        bytes32 message = keccak256(abi.encodePacked(
+            "addMerkleRoot",
+            address(this),
+            merkleRoot,
+            blockTime,
+            processedDeposits,
+            withdrawalHash
+        ));
+
+        require(
+            merkleRoot != bytes32(0),
+            "Merkle root cannot be empty"
+        );
+
+        require(
+            merkleRoots[blockTime] == bytes32(0),
+            "Merkle root for block height already exists"
+        );
+
+        validateSignatures(
+            message,
+            _signers,
+            _v,
+            _r,
+            _s
+        );
+
+        merkleRoots[blockTime] = merkleRoot;
+
+        if (blockTime > latestBlockTime) {
+            latestBlockTime = blockTime;
+        }
+
+        vault.clearPendingDeposits(processedDeposits);
+
+        if (withdrawalHash != bytes32(0)) {
+            require(
+                withdrawalHashes[withdrawalHash] == 0,
+                "Withdrawal hash already exists"
+            );
+
+            // add 70k gas for buffer, 21k for base transaction fee
+            // 49k for storage and event emission fees
+            uint256 networkFee = (startGas - gasleft() + 70000) * tx.gasprice;
+            withdrawalHashes[withdrawalHash] = networkFee;
+        }
     }
 
     function addWithdrawer(
