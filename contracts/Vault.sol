@@ -91,6 +91,18 @@ contract Vault {
         );
     }
 
+    function clearPendingDeposits(bytes32[] memory messages) public {
+        require(
+            withdrawers[msg.sender] == true,
+            "Unauthorised sender"
+        );
+
+        for (uint256 i = 0; i < messages.length; i++) {
+            bytes32 message = messages[i];
+            pendingDeposits[message] = false;
+        }
+    }
+
     function addWithdrawer(address _withdrawer, uint256 _nonce) external {
         require(
             withdrawers[msg.sender] == true,
