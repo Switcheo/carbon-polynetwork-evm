@@ -30,7 +30,8 @@ contract Council {
         address assetId,
         uint256 amount,
         uint256 nonce,
-        uint256 networkFee
+        uint256 networkFee,
+        string senderAddress
     );
 
     constructor(address vaultAddress) public {
@@ -110,9 +111,9 @@ contract Council {
         address payable _receivingAddress,
         address _assetId,
         uint256 _amount,
-        uint256 _conversionNumerator,
-        uint256 _conversionDenominator,
-        uint256 _nonce
+        uint256[] memory _conversionRate,
+        uint256 _nonce,
+        string memory _senderAddress
     )
         public
     {
@@ -134,8 +135,8 @@ contract Council {
             _receivingAddress,
             _assetId,
             _amount,
-            _conversionNumerator,
-            _conversionDenominator,
+            _conversionRate[0],
+            _conversionRate[1],
             _nonce
         ));
 
@@ -161,7 +162,7 @@ contract Council {
 
         // double count the transfer cost as a second transfer will be performed
         uint256 networkFee = (startGas - gasleft() + transferCost) * tx.gasprice + withdrawalHashes[withdrawalRoot];
-        uint256 convertedNetworkFee = networkFee * _conversionNumerator / _conversionDenominator;
+        uint256 convertedNetworkFee = networkFee * _conversionRate[0] / _conversionRate[1];
 
         // the remaining amount to transfer is less than the network fee so just return
         if (_amount / 2 < convertedNetworkFee) {
@@ -180,7 +181,8 @@ contract Council {
             _assetId,
             _amount,
             _nonce,
-            convertedNetworkFee
+            convertedNetworkFee,
+            _senderAddress
         );
     }
 

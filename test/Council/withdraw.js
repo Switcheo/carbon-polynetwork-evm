@@ -10,6 +10,7 @@ contract('Test withdraw', async (accounts) => {
     const user1 = accounts[1]
     const user2 = accounts[2]
     const user3 = accounts[3]
+    const sender = 'sender1ju4rl33f6c8ptgch8gtmqqt85xrs3zz9txp4n5'
     const merkleRoot = web3.utils.soliditySha3(
         { type: 'string', value: 'example root' }
     )
@@ -27,7 +28,7 @@ contract('Test withdraw', async (accounts) => {
             jrc.address,
             100,
             'swth1ju4rl33f6c8ptgch8gtmqqt85xrs3zz9txp4n5',
-            'sender1ju4rl33f6c8ptgch8gtmqqt85xrs3zz9txp4n5',
+            sender,
             { from: user3 }
         )
         await assertBalance(vault.address, jrc, 100)
@@ -50,24 +51,21 @@ contract('Test withdraw', async (accounts) => {
                 receivingAddress: newAddress(),
                 assetId: jrc.address,
                 amount: 10,
-                conversionNumerator: 10,
-                conversionDenominator: 2,
+                conversionRate: [10, 2],
                 nonce: 1
             },
             {
                 receivingAddress: newAddress(),
                 assetId: ETHER_ADDR,
                 amount: web3.utils.toWei('1', 'ether'),
-                conversionNumerator: 1,
-                conversionDenominator: 1,
+                conversionRate: [1, 1],
                 nonce: 2
             },
             {
                 receivingAddress: newAddress(),
                 assetId: jrc.address,
                 amount: 42,
-                conversionNumerator: 30,
-                conversionDenominator: 3,
+                conversionRate: [30, 3],
                 nonce: 3
             }
         ]
@@ -106,9 +104,9 @@ contract('Test withdraw', async (accounts) => {
                 withdrawal.receivingAddress,
                 withdrawal.assetId,
                 withdrawal.amount,
-                withdrawal.conversionNumerator,
-                withdrawal.conversionDenominator,
+                withdrawal.conversionRate,
                 withdrawal.nonce,
+                sender,
                 { from: user1 }
             )
         })

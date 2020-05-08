@@ -284,7 +284,7 @@ async function getAddMerkleRootParams({
 }
 
 async function hashWithdrawal({
-    receivingAddress, assetId, amount, conversionNumerator, conversionDenominator, nonce
+    receivingAddress, assetId, amount, conversionRate, nonce
 }) {
     const council = await getCouncil()
     const message = web3.utils.soliditySha3(
@@ -293,8 +293,7 @@ async function hashWithdrawal({
         { type: 'address', value: receivingAddress },
         { type: 'address', value: assetId },
         { type: 'uint256', value: amount },
-        { type: 'uint256', value: conversionNumerator },
-        { type: 'uint256', value: conversionDenominator },
+        { type: 'uint256[]', value: conversionRate },
         { type: 'uint256', value: nonce }
     )
 
