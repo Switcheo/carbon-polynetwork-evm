@@ -12,6 +12,43 @@ contract('Test depositToken', async (accounts) => {
         await jrc.mint(user, 42)
     })
 
+    contract('test event emission', async () => {
+        it('emits events', async () => {
+            const amount = 20
+            await jrc.approve(vault.address, amount, { from: user })
+            const result = await vault.depositToken(
+                user,
+                jrc.address,
+                amount,
+                externalAddress,
+                senderAddress,
+                { from: user }
+            )
+            assertEvents(result, [
+                'Transfer',
+                {
+                    from: user,
+                    to: vault.address,
+                    value: amount
+                },
+                'Approval',
+                {
+                    owner: user,
+                    spender: vault.address,
+                    value: 0
+                },
+                'Deposit',
+                {
+                    user,
+                    assetId: jrc.address,
+                    amount,
+                    externalAddress,
+                    sender: senderAddress
+                }
+            ])
+        })
+    })
+
     contract('when parameters are valid', async () => {
         it('deposits tokens', async () => {
             const amount = 20

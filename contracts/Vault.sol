@@ -183,6 +183,16 @@ contract Vault {
     )
         private
     {
+        if (_assetId == ETHER_ADDR) {
+            _receivingAddress.transfer(_amount);
+            return;
+        }
+
+        _transferTokensOut(
+            _receivingAddress,
+            _assetId,
+            _amount
+        );
     }
 
     /// @notice Transfers tokens into the contract
