@@ -19,6 +19,10 @@ async function getCouncil() { return await Council.deployed() }
 async function getWalletFactory() { return await WalletFactory.deployed() }
 async function getJrc() { return await JRCoin.deployed() }
 
+function newAddress() {
+    return web3.eth.accounts.create().address
+}
+
 function getWalletBytecodeHash() {
     const encodedParams = web3.eth.abi.encodeParameters([], []).slice(2)
     const constructorByteCode = `${Wallet.bytecode}${encodedParams}`
@@ -279,10 +283,31 @@ async function getAddMerkleRootParams({
     ]
 }
 
+async function hashWithdrawal({
+    receivingAddress, assetId, amount, conversionNumerator, conversionDenominator, nonce
+}) {
+    const council = await getCouncil()
+    const message = web3.utils.soliditySha3(
+        { type: 'string', value: 'withdraw' },
+        { type: 'address', value: council.address },
+        { type: 'address', value: receivingAddress },
+        { type: 'address', value: assetId },
+        { type: 'uint256', value: amount },
+        { type: 'uint256', value: conversionNumerator },
+        { type: 'uint256', value: conversionDenominator },
+        { type: 'uint256', value: nonce }
+    )
+
+    return message
+    // return message.slice(2)
+    // return Buffer.from(message.slice(2), 'hex')
+}
+
 module.exports = {
     web3,
     getVault,
     getCouncil,
+    newAddress,
     getWalletBytecodeHash,
     getWalletFactory,
     getWalletAddress,
@@ -298,5 +323,6 @@ module.exports = {
     getUpdateVotingPowersParams,
     getAddWithdrawerParams,
     getRemoveWithdrawerParams,
-    getAddMerkleRootParams
+    getAddMerkleRootParams,
+    hashWithdrawal
 }

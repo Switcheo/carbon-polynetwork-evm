@@ -1,4 +1,4 @@
-const { getVault, getJrc, assertBalance, assertReversion } = require('../utils')
+const { getVault, getJrc, newAddress, assertBalance, assertReversion } = require('../utils')
 const { ETHER_ADDR } = require('../constants')
 
 contract('Test withdraw', async (accounts) => {
@@ -15,7 +15,7 @@ contract('Test withdraw', async (accounts) => {
 
     contract('when parameters are valid', async () => {
         it('withdraws ETH', async () => {
-            const receiver = web3.eth.accounts.create().address
+            const receiver = newAddress()
             await assertBalance(receiver, ETHER_ADDR, 0)
 
             const amount = web3.utils.toWei('1', 'ether')
@@ -41,7 +41,7 @@ contract('Test withdraw', async (accounts) => {
 
     contract('when parameters are valid', async () => {
         it('withdraws tokens', async () => {
-            const receiver = web3.eth.accounts.create().address
+            const receiver = newAddress()
             await assertBalance(receiver, jrc, 0)
 
             const amount = 20
@@ -70,7 +70,7 @@ contract('Test withdraw', async (accounts) => {
 
     contract('when the sender is not an authorised withdrawer', async () => {
         it('throws an error', async () => {
-            const receiver = web3.eth.accounts.create().address
+            const receiver = newAddress()
             await assertBalance(receiver, ETHER_ADDR, 0)
 
             const amount = web3.utils.toWei('1', 'ether')
