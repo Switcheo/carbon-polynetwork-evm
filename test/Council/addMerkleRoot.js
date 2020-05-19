@@ -40,6 +40,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                 blockTime: blockTime,
                 processedDeposits: [],
                 withdrawalHash,
+                numWithdrawals: 1,
                 signers: [user1, user2]
             })
 
@@ -57,6 +58,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                 blockTime: blockTime,
                 processedDeposits: [],
                 withdrawalHash,
+                numWithdrawals: 1,
                 signers: [user1, user2]
             })
 
@@ -76,6 +78,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                     blockTime,
                     processedDeposits: [],
                     withdrawalHash,
+                    numWithdrawals: 1,
                     signers: [user1, user2]
                 })
             )
@@ -94,6 +97,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                     blockTime: 5,
                     processedDeposits: [],
                     withdrawalHash: newWithdrawalHash,
+                    numWithdrawals: 1,
                     signers: [user1, user2]
                 })
             )
@@ -134,6 +138,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                 blockTime: blockTime,
                 processedDeposits: [message],
                 withdrawalHash,
+                numWithdrawals: 1,
                 signers: [user1, user2]
             })
             await council.addMerkleRoot(...params)
@@ -150,6 +155,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                 blockTime: blockTime,
                 processedDeposits: [],
                 withdrawalHash,
+                numWithdrawals: 1,
                 signers: [user1, user2]
             })
 
@@ -163,6 +169,33 @@ contract('Test addMerkleRoot', async (accounts) => {
         })
     })
 
+    contract('when there is more than one withdrawal', async () => {
+        it('divides the network fee', async () => {
+            const blockTime = 7
+            await assertAsync(council.withdrawalHashes(withdrawalHash), 0)
+            const params = await getAddMerkleRootParams({
+                merkleRoot,
+                blockTime: blockTime,
+                processedDeposits: [],
+                withdrawalHash,
+                numWithdrawals: 10,
+                signers: [user1, user2]
+            })
+
+            const gasPrice = 70
+            const result = await council.addMerkleRoot(...params, { gasPrice })
+            const estimatedNetworkFee = await council.withdrawalHashes(withdrawalHash)
+            const actualFee = result.receipt.gasUsed * gasPrice
+
+            assert.equal(actualFee / 10 < estimatedNetworkFee, true, 'Actual fee is less than estimate')
+            assert.equal(
+                (actualFee * 1.5 / 10) > estimatedNetworkFee,
+                true,
+                '150% of actual fee is more than estimated fee'
+            )
+        })
+    })
+
     contract('when the merkle root is empty', async () => {
         it('throws an error', async () => {
             const blockTime = 7
@@ -171,6 +204,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                 blockTime: blockTime,
                 processedDeposits: [],
                 withdrawalHash,
+                numWithdrawals: 1,
                 signers: [user1, user2]
             })
 
@@ -190,6 +224,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                 blockTime: blockTime,
                 processedDeposits: [],
                 withdrawalHash,
+                numWithdrawals: 1,
                 signers: [user1, user2]
             })
 
@@ -211,6 +246,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                 blockTime: blockTime,
                 processedDeposits: [],
                 withdrawalHash,
+                numWithdrawals: 1,
                 signers: [user2]
             })
 
@@ -234,6 +270,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                     blockTime,
                     processedDeposits: [],
                     withdrawalHash,
+                    numWithdrawals: 1,
                     signers: [user1, user2]
                 })
             )
@@ -245,6 +282,7 @@ contract('Test addMerkleRoot', async (accounts) => {
                         blockTime: 5,
                         processedDeposits: [],
                         withdrawalHash,
+                        numWithdrawals: 1,
                         signers: [user1, user2]
                     })
                 ),

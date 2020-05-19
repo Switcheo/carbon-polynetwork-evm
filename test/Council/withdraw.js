@@ -90,6 +90,7 @@ contract('Test withdraw', async (accounts) => {
                     blockTime: 7,
                     processedDeposits: [],
                     withdrawalHash: withdrawalRoot,
+                    numWithdrawals: 1,
                     signers: [user1, user2]
                 })
             )

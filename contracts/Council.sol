@@ -41,10 +41,11 @@ contract Council {
     }
 
     function addMerkleRoot(
-        bytes32 merkleRoot,
-        uint256 blockTime,
-        bytes32[] memory processedDeposits,
-        bytes32 withdrawalHash,
+        bytes32 _merkleRoot,
+        uint256 _blockTime,
+        bytes32[] memory _processedDeposits,
+        bytes32 _withdrawalHash,
+        uint256 _numWithdrawals,
         address[] memory _signers,
         uint8[] memory _v,
         bytes32[] memory _r,
@@ -57,19 +58,20 @@ contract Council {
         bytes32 message = keccak256(abi.encodePacked(
             "addMerkleRoot",
             address(this),
-            merkleRoot,
-            blockTime,
-            processedDeposits,
-            withdrawalHash
+            _merkleRoot,
+            _blockTime,
+            _processedDeposits,
+            _withdrawalHash,
+            _numWithdrawals
         ));
 
         require(
-            merkleRoot != bytes32(0),
+            _merkleRoot != bytes32(0),
             "Merkle root cannot be empty"
         );
 
         require(
-            merkleRoots[blockTime] == bytes32(0),
+            merkleRoots[_blockTime] == bytes32(0),
             "Merkle root for block height already exists"
         );
 
@@ -81,17 +83,17 @@ contract Council {
             _s
         );
 
-        merkleRoots[blockTime] = merkleRoot;
+        merkleRoots[_blockTime] = _merkleRoot;
 
-        if (blockTime > latestBlockTime) {
-            latestBlockTime = blockTime;
+        if (_blockTime > latestBlockTime) {
+            latestBlockTime = _blockTime;
         }
 
-        vault.clearPendingDeposits(processedDeposits);
+        vault.clearPendingDeposits(_processedDeposits);
 
-        if (withdrawalHash != bytes32(0)) {
+        if (_withdrawalHash != bytes32(0)) {
             require(
-                withdrawalHashes[withdrawalHash] == 0,
+                withdrawalHashes[_withdrawalHash] == 0,
                 "Withdrawal hash already exists"
             );
 
@@ -101,7 +103,7 @@ contract Council {
             if (networkFee == 0) {
                 networkFee = 1;
             }
-            withdrawalHashes[withdrawalHash] = networkFee;
+            withdrawalHashes[_withdrawalHash] = networkFee / _numWithdrawals;
         }
     }
 
