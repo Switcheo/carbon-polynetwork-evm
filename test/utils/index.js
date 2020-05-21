@@ -300,8 +300,6 @@ async function hashWithdrawal({
     )
 
     return message
-    // return message.slice(2)
-    // return Buffer.from(message.slice(2), 'hex')
 }
 
 module.exports = {
