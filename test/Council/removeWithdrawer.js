@@ -18,7 +18,6 @@ contract('Test removeWithdrawer', async (accounts) => {
             signers: [deployer]
         })
         await council.updateVotingPowers(...params)
-        await vault.addWithdrawer(council.address, 100, { from: deployer })
         await vault.removeWithdrawer({ from: deployer })
     })
 

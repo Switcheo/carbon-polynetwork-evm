@@ -205,6 +205,12 @@ contract Council {
             _nonce
         ));
 
+        require(
+            usedHashes[message] == false,
+            "Nonce already used"
+        );
+        usedHashes[message] = true;
+
         validateSignatures(
             message,
             _signers,
