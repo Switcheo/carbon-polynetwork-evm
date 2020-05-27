@@ -25,6 +25,13 @@ contract Council {
         uint256 amount
     );
 
+    event AddMerkleRoot(
+        bytes32 merkleRoot,
+        uint256 blockTime,
+        bytes32 withdrawalHash,
+        uint256 numWithdrawals
+    );
+
     event Withdraw(
         address receivingAddress,
         address assetId,
@@ -105,6 +112,13 @@ contract Council {
             }
             withdrawalHashes[_withdrawalHash] = networkFee / _numWithdrawals;
         }
+
+        emit AddMerkleRoot(
+            _merkleRoot,
+            _blockTime,
+            _withdrawalHash,
+            _numWithdrawals
+        );
     }
 
     function withdraw(
