@@ -122,8 +122,8 @@ contract Council {
     }
 
     function withdraw(
-        bytes32 withdrawalRoot,
-        bytes32[] memory proof,
+        bytes32 _withdrawalRoot,
+        bytes32[] memory _proof,
         address payable _receivingAddress,
         address _assetId,
         uint256 _amount,
@@ -141,7 +141,7 @@ contract Council {
         );
 
         require(
-            withdrawalHashes[withdrawalRoot] != 0,
+            withdrawalHashes[_withdrawalRoot] != 0,
             "Withdrawal root does not exist in store"
         );
 
@@ -163,7 +163,7 @@ contract Council {
         usedHashes[withdrawalLeaf] = true;
 
         require(
-            MerkleProof.verify(proof, withdrawalRoot, withdrawalLeaf) == true,
+            MerkleProof.verify(_proof, _withdrawalRoot, withdrawalLeaf) == true,
             "Invalid proof"
         );
 
@@ -177,7 +177,7 @@ contract Council {
         uint256 transferCost = beforeTransferGas - gasleft();
 
         // double count the transfer cost as a second transfer will be performed
-        uint256 networkFee = (startGas - gasleft() + transferCost) * tx.gasprice + withdrawalHashes[withdrawalRoot];
+        uint256 networkFee = (startGas - gasleft() + transferCost) * tx.gasprice + withdrawalHashes[_withdrawalRoot];
         uint256 convertedNetworkFee = networkFee * _conversionRate[0] / _conversionRate[1];
 
         // the remaining amount to transfer is less than the network fee so just return
