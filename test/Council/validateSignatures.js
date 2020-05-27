@@ -1,4 +1,4 @@
-const { web3, getCouncil, getUpdateVotingPowersParams, getValidateSignatureParams,
+const { web3, getCouncil, getUpdateVotingPowersParams, getSignatureParams,
         assertReversion } = require('../utils')
 
 contract('Test validateSignatures', async (accounts) => {
@@ -24,7 +24,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when parameters are valid', async () => {
         it('does not throw an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: [user1, user2]
             })
@@ -35,7 +35,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when signers are empty', async () => {
         it('throws an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: []
             })
@@ -49,7 +49,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when _v.length != _signers.length', async () => {
         it('throws an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: [user1, user2]
             })
@@ -69,7 +69,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when _r.length != _signers.length', async () => {
         it('throws an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: [user1, user2]
             })
@@ -89,7 +89,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when _s.length != _signers.length', async () => {
         it('throws an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: [user1, user2]
             })
@@ -109,7 +109,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when signers are not sorted in an strictly ascending order', async () => {
         it('throws an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: [user1, user2]
             })
@@ -129,7 +129,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when signers are duplicated', async () => {
         it('throws an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: [user1, user1]
             })
@@ -149,7 +149,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when the signature is not valid', async () => {
         it('throws an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: [user1, user2]
             })
@@ -169,7 +169,7 @@ contract('Test validateSignatures', async (accounts) => {
 
     contract('when the signers have insufficient voting power', async () => {
         it('throws an error', async () => {
-            const params = await getValidateSignatureParams({
+            const params = await getSignatureParams({
                 message,
                 signers: [user2]
             })

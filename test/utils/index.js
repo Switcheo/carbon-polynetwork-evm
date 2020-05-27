@@ -165,7 +165,7 @@ async function signMessage(message, signer) {
     return parseSignature(signature)
 }
 
-async function getValidateSignatureParams({ message, signers }) {
+async function getSignatureParams({ message, signers }) {
     signers.sort((a, b) => {
         a = web3.utils.toBN(a)
         b = web3.utils.toBN(b)
@@ -204,7 +204,7 @@ async function getUpdateVotingPowersParams({
         { type: 'uint256', value: nonce }
     )
 
-    const signatureParams = await getValidateSignatureParams({ message, signers })
+    const signatureParams = await getSignatureParams({ message, signers })
 
     return [
         voters,
@@ -227,7 +227,7 @@ async function getAddWithdrawerParams({ withdrawer, nonce, signers }) {
         { type: 'uint256', value: nonce }
     )
 
-    const signatureParams = await getValidateSignatureParams({ message, signers })
+    const signatureParams = await getSignatureParams({ message, signers })
 
     return [
         withdrawer,
@@ -246,7 +246,7 @@ async function getRemoveWithdrawerParams({ signers }) {
         { type: 'address', value: council.address }
     )
 
-    const signatureParams = await getValidateSignatureParams({ message, signers })
+    const signatureParams = await getSignatureParams({ message, signers })
 
     return [
         signatureParams[1],
@@ -270,7 +270,7 @@ async function getAddMerkleRootParams({
         { type: 'uint256', value: numWithdrawals }
     )
 
-    const signatureParams = await getValidateSignatureParams({ message, signers })
+    const signatureParams = await getSignatureParams({ message, signers })
 
     return [
         merkleRoot,
@@ -317,8 +317,9 @@ module.exports = {
     assertReversion,
     assertEvents,
     assertBalance,
+    parseSignature,
     signMessage,
-    getValidateSignatureParams,
+    getSignatureParams,
     getUpdateVotingPowersParams,
     getAddWithdrawerParams,
     getRemoveWithdrawerParams,
