@@ -15,7 +15,7 @@ module.exports = {
                 )
             },
             network_id: 3,
-            gasPrice: 10 * 1000000000
+            gasPrice: 50 * 1000000000
         },
         mainnet: {
             provider: function() {
