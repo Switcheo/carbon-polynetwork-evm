@@ -1,3 +1,4 @@
+const BalanceReader = artifacts.require('BalanceReader')
 const Vault = artifacts.require('Vault')
 const Council = artifacts.require('Council')
 const WalletFactory = artifacts.require('WalletFactory')
@@ -14,6 +15,7 @@ abiDecoder.addABI(JRCoin.abi)
 abiDecoder.addABI(Vault.abi)
 abiDecoder.addABI(Council.abi)
 
+async function getBalanceReader() { return await BalanceReader.deployed() }
 async function getVault() { return await Vault.deployed() }
 async function getCouncil() { return await Council.deployed() }
 async function getWalletFactory() { return await WalletFactory.deployed() }
@@ -304,6 +306,7 @@ async function hashWithdrawal({
 
 module.exports = {
     web3,
+    getBalanceReader,
     getVault,
     getCouncil,
     newAddress,
