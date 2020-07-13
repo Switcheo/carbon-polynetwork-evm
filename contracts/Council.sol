@@ -1,8 +1,8 @@
 pragma solidity 0.6.5;
 
-import "./lib/math/SafeMath.sol";
+import "./libs/math/SafeMath.sol";
 import "./Vault.sol";
-import "./lib/cryptography/MerkleProof.sol";
+import "./libs/cryptography/MerkleProof.sol";
 
 contract Council {
     using SafeMath for uint256;

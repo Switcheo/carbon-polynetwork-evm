@@ -1,6 +1,6 @@
 pragma solidity 0.6.5;
 
-import "./lib/math/SafeMath.sol";
+import "./libs/math/SafeMath.sol";
 
 interface ERC20 {
     function balanceOf(address account) external view returns (uint256);
