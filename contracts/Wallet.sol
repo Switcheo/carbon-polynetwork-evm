@@ -1,97 +1,33 @@
 pragma solidity 0.6.5;
 
-import "./libs/math/SafeMath.sol";
-import "./libs/utils/Address.sol";
-
 interface ERC20 {
-    function balanceOf(address account) external view returns (uint256);
-    function allowance(address owner, address spender) external view returns (uint256);
     function approve(address spender, uint256 amount) external returns (bool);
 }
 
-interface Vault {
-    function deposit(
-        address _user,
-        string calldata _externalAddress,
-        string calldata _senderAddress
-    ) external payable;
-
-    function depositToken(
-        address _user,
-        address _assetId,
-        uint256 _amount,
-        string calldata _externalAddress,
-        string calldata _senderAddress
-    ) external;
-}
-
 contract Wallet {
-    using SafeMath for uint256;
-    using Address for address;
-
-    address public nativeAddress;
-    string public externalAddress;
-    address public vaultAddress;
-
+    address public creator;
     bool isInitialized;
 
-    function initialize(
-        address _nativeAddress,
-        string calldata _externalAddress,
-        address _vaultAddress
-    )
-        external
-    {
+    function initialize() external {
         require(isInitialized == false, "Contract already initialized");
         isInitialized = true;
-        nativeAddress = _nativeAddress;
-        externalAddress = _externalAddress;
-        vaultAddress = _vaultAddress;
+        creator = msg.sender;
     }
 
-    function sendETH(string calldata _senderAddress) external {
-        uint256 amount = address(this).balance;
-        Vault vault = Vault(vaultAddress);
-        vault.deposit{value: amount}(
-            nativeAddress,
-            externalAddress,
-            _senderAddress
-        );
+    function sendETHToCreator(uint256 amount) external {
+        require(msg.sender == creator, "Sender must be creator");
+        address(uint160(creator)).transfer(amount);
     }
 
-    function sendERC20Tokens(
-        address _assetId,
-        uint256 _amount,
-        uint256 _maxAllowance,
-        string calldata _senderAddress
-    )
-        external
-    {
-        ERC20 token = ERC20(_assetId);
+    function setAllowance(address _spender, address _assetId, uint256 _amount) external {
+        require(msg.sender == creator, "Sender must be creator");
 
-        uint256 allowance = token.allowance(address(this), vaultAddress);
-
-        if (_amount > allowance) {
-            setAllowance(_assetId, _maxAllowance);
-        }
-
-        Vault vault = Vault(vaultAddress);
-        vault.depositToken(
-            nativeAddress,
-            _assetId,
-            _amount,
-            externalAddress,
-            _senderAddress
-        );
-    }
-
-    function setAllowance(address _assetId, uint256 _amount) public {
         ERC20 token = ERC20(_assetId);
         _callOptionalReturn(
-            _assetId,
+            token,
             abi.encodeWithSelector(
                 token.approve.selector,
-                vaultAddress,
+                _spender,
                 _amount
             )
         );
@@ -100,19 +36,13 @@ contract Wallet {
     /// @dev Allow this contract to receive Ethereum
     receive() external payable {}
 
-    /// @notice Returns the number of tokens owned by this contract.
-    /// @dev This will not work for Ether tokens, use `externalBalance` for
-    /// Ether tokens.
-    /// @param _assetId The address of the token to query
-    function _tokenBalance(address _assetId) private view returns (uint256) {
-        return ERC20(_assetId).balanceOf(address(this));
-    }
-
-    /// @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
-    /// on the return value: the return value is optional (but if data is returned, it must not be false).
-    /// @param target The address targeted by the call.
-    /// @param data The call data (encoded using abi.encode or one of its variants).
-    function _callOptionalReturn(address target, bytes memory data) private {
+    /**
+     * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement
+     * on the return value: the return value is optional (but if data is returned, it must not be false).
+     * @param token The token targeted by the call.
+     * @param data The call data (encoded using abi.encode or one of its variants).
+     */
+    function _callOptionalReturn(ERC20 token, bytes memory data) private {
         // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
         // we're implementing it ourselves.
 
@@ -121,15 +51,43 @@ contract Wallet {
         //  2. The call itself is made, and success asserted
         //  3. The return value is decoded, which in turn checks the size of the returned data.
         // solhint-disable-next-line max-line-length
-        require(target.isContract(), "Call to non-contract");
+        require(isContract(address(token)), "SafeERC20: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call(data);
-        require(success, "Low-level call failed");
+        (bool success, bytes memory returndata) = address(token).call(data);
+        require(success, "SafeERC20: low-level call failed");
 
         if (returndata.length > 0) { // Return data is optional
             // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "Operation did not succeed");
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
         }
+    }
+
+    /**
+     * @dev Returns true if `account` is a contract.
+     *
+     * [IMPORTANT]
+     * ====
+     * It is unsafe to assume that an address for which this function returns
+     * false is an externally-owned account (EOA) and not a contract.
+     *
+     * Among others, `isContract` will return false for the following
+     * types of addresses:
+     *
+     *  - an externally-owned account
+     *  - a contract in construction
+     *  - an address where a contract will be created
+     *  - an address where a contract lived, but was destroyed
+     * ====
+     */
+    function isContract(address account) internal view returns (bool) {
+        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
+        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
+        // for accounts without code, i.e. `keccak256('')`
+        bytes32 codehash;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { codehash := extcodehash(account) }
+        return (codehash != accountHash && codehash != 0x0);
     }
 }
