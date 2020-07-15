@@ -102,8 +102,9 @@ contract WalletFactory {
         public
     {
         _validateWalletAddress(_walletAddress);
-        _validateSendEth(
+        _validateSend(
             _walletAddress,
+            ETH_ASSET_ID,
             _targetProxyHash,
             _toAssetHash,
             _amount,
@@ -142,7 +143,7 @@ contract WalletFactory {
         public
     {
         _validateWalletAddress(_walletAddress);
-        _validateSendERC20(
+        _validateSend(
             _walletAddress,
             _assetHash,
             _targetProxyHash,
@@ -172,33 +173,7 @@ contract WalletFactory {
     /// @dev Allow this contract to receive Ethereum
     receive() external payable {}
 
-    function _validateSendEth(
-        address payable _walletAddress,
-        bytes memory _targetProxyHash,
-        bytes memory _toAssetHash,
-        uint256 _amount,
-        uint256 _feeAmount,
-        bytes memory _feeAddress,
-        uint8 _v,
-        bytes32[] memory _rs
-    )
-        private
-        view
-    {
-        bytes32 message = keccak256(abi.encodePacked(
-            "sendEth",
-            _targetProxyHash,
-            _toAssetHash,
-            _amount,
-            _feeAmount,
-            _feeAddress
-        ));
-
-        address user = nativeAddresses[_walletAddress];
-        _validateSignature(message, user, _v, _rs[0], _rs[1]);
-    }
-
-    function _validateSendERC20(
+    function _validateSend(
         address payable _walletAddress,
         address _assetHash,
         bytes memory _targetProxyHash,
@@ -213,7 +188,7 @@ contract WalletFactory {
         view
     {
         bytes32 message = keccak256(abi.encodePacked(
-            "sendEth",
+            "sendTokens",
             _assetHash,
             _targetProxyHash,
             _toAssetHash,
