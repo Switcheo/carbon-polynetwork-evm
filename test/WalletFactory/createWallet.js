@@ -11,21 +11,19 @@ contract('Test createWallet', async (accounts) => {
     contract('when parameters are valid', async () => {
         it('creates a wallet at the expected address', async () => {
             console.log('wallet bytecodeHash', getWalletBytecodeHash())
+            const nativeAddress = '0xE28338b00b8bdcaB93623F99C5De2F2b33b740a9'
+            const externalAddress = '0x41fbaff59b973f5f14496c0d1ed06afa6aeac174'
 
-            const nativeAddress = '0x359EF15fB3E86dDF050228f03336979fA5212480'
-            const externalAddress = 'swth1ju4rl33f6c8ptgch8gtmqqt85xrs3zz9txp4n5'
-            const vaultAddress = '0x571037CC2748c340e3C6d9c7AF589c6D65806618'
-
-            const expectedAddress = await getWalletAddress(nativeAddress, externalAddress, vaultAddress)
+            const expectedAddress = await getWalletAddress(nativeAddress, externalAddress)
+            console.log('expectedAddress', expectedAddress)
             await assertReversion(Wallet.at(expectedAddress), 'Cannot create instance of Wallet; no code at address')
 
-            const result = await factory.createWallet(nativeAddress, externalAddress, vaultAddress)
+            const result = await factory.createWallet(nativeAddress, externalAddress)
             console.log('Gas used:', result.receipt.gasUsed)
 
-            const wallet = await Wallet.at(expectedAddress)
-            await assertAsync(wallet.nativeAddress(), nativeAddress)
-            await assertAsync(wallet.externalAddress(), externalAddress)
-            await assertAsync(wallet.vaultAddress(), vaultAddress)
+            await Wallet.at(expectedAddress)
+            await assertAsync(factory.nativeAddresses(expectedAddress), nativeAddress)
+            await assertAsync(factory.externalAddresses(expectedAddress), externalAddress)
         })
     })
 })
