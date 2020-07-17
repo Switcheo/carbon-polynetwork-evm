@@ -9,7 +9,7 @@ interface ERC20 {
 contract BalanceReader {
     using SafeMath for uint256;
 
-    address private constant ETHER_ADDR = address(0x8000003c);
+    address private constant ETHER_ADDR = address(0);
 
     function getBalances(
         address _user,
