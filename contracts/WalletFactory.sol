@@ -22,6 +22,7 @@ contract WalletFactory {
 
     mapping(address => address) public nativeAddresses;
     mapping(address => string) public externalAddresses;
+    mapping(bytes32 => bool) public seenMessages;
 
     uint64 public targetChainId;
     LockProxy public lockProxy;
@@ -89,13 +90,15 @@ contract WalletFactory {
         externalAddresses[walletAddress] = _externalAddress;
     }
 
+    // _values[0]: amount
+    // _values[1]: feeAmount
+    // _values[2]: nonce
     function sendEth(
         address payable _walletAddress,
         bytes memory _targetProxyHash,
         bytes memory _toAssetHash,
-        uint256 _amount,
-        uint256 _feeAmount,
         bytes memory _feeAddress,
+        uint256[] memory _values,
         uint8 _v,
         bytes32[] memory _rs
     )
@@ -107,36 +110,37 @@ contract WalletFactory {
             ETH_ASSET_ID,
             _targetProxyHash,
             _toAssetHash,
-            _amount,
-            _feeAmount,
             _feeAddress,
+            _values,
             _v,
             _rs
         );
 
-        _transferEthIn(_walletAddress, _amount);
+        _transferEthIn(_walletAddress, _values[0]);
 
-        lockProxy.lock{ value: _amount }(
+        lockProxy.lock{ value: _values[0] }(
             ETH_ASSET_ID,
             targetChainId,
             _targetProxyHash,
             _toAssetHash,
             _getExternalAddress(_walletAddress),
-            _amount,
+            _values[0],
             false,
-            _feeAmount,
+            _values[1],
             _feeAddress
         );
     }
 
+    // _values[0]: amount
+    // _values[1]: feeAmount
+    // _values[2]: nonce
     function sendERC20(
         address payable _walletAddress,
         address _assetHash,
         bytes memory _targetProxyHash,
         bytes memory _toAssetHash,
-        uint256 _amount,
-        uint256 _feeAmount,
         bytes memory _feeAddress,
+        uint256[] memory _values,
         uint8 _v,
         bytes32[] memory _rs
     )
@@ -148,14 +152,13 @@ contract WalletFactory {
             _assetHash,
             _targetProxyHash,
             _toAssetHash,
-            _amount,
-            _feeAmount,
             _feeAddress,
+            _values,
             _v,
             _rs
         );
 
-        _approveERC20(_walletAddress, _assetHash, _amount);
+        _approveERC20(_walletAddress, _assetHash, _values[0]);
 
         lockProxy.lock(
             _assetHash,
@@ -163,9 +166,9 @@ contract WalletFactory {
             _targetProxyHash,
             _toAssetHash,
             _getExternalAddress(_walletAddress),
-            _amount,
+            _values[0],
             false,
-            _feeAmount,
+            _values[1],
             _feeAddress
         );
     }
@@ -173,29 +176,34 @@ contract WalletFactory {
     /// @dev Allow this contract to receive Ethereum
     receive() external payable {}
 
+    // _values[0]: amount
+    // _values[1]: feeAmount
+    // _values[2]: nonce
     function _validateSend(
         address payable _walletAddress,
         address _assetHash,
         bytes memory _targetProxyHash,
         bytes memory _toAssetHash,
-        uint256 _amount,
-        uint256 _feeAmount,
         bytes memory _feeAddress,
+        uint256[] memory _values,
         uint8 _v,
         bytes32[] memory _rs
     )
         private
-        view
     {
         bytes32 message = keccak256(abi.encodePacked(
             "sendTokens",
             _assetHash,
             _targetProxyHash,
             _toAssetHash,
-            _amount,
-            _feeAmount,
-            _feeAddress
+            _feeAddress,
+            _values[0],
+            _values[1],
+            _values[2]
         ));
+
+        require(seenMessages[message] == false, "Message already seen");
+        seenMessages[message] = true;
 
         address user = nativeAddresses[_walletAddress];
         _validateSignature(message, user, _v, _rs[0], _rs[1]);
