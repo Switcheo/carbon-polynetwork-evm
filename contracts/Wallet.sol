@@ -2,6 +2,7 @@ pragma solidity 0.6.5;
 
 interface ERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
+    function transfer(address recipient, uint256 amount) external returns (bool);
 }
 
 contract Wallet {
@@ -19,15 +20,15 @@ contract Wallet {
         address(uint160(creator)).transfer(amount);
     }
 
-    function setAllowance(address _spender, address _assetId, uint256 _amount) external {
+    function sendERC20ToCreator(address _assetId, uint256 _amount) external {
         require(msg.sender == creator, "Sender must be creator");
 
         ERC20 token = ERC20(_assetId);
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(
-                token.approve.selector,
-                _spender,
+                token.transfer.selector,
+                creator,
                 _amount
             )
         );
