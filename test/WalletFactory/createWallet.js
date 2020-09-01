@@ -19,6 +19,8 @@ contract('Test createWallet', async (accounts) => {
             console.log('expectedAddress', expectedAddress)
             await assertReversion(Wallet.at(expectedAddress), 'Cannot create instance of Wallet; no code at address')
 
+            // wallet contract costs 1.3 million gas to deploy
+            // compared to 0.46 million gas if functions are in wallet factory instead
             const result = await factory.createWallet(owner, externalAddress, chainId)
             console.log('Gas used:', result.receipt.gasUsed)
 
