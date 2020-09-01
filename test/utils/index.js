@@ -31,9 +31,9 @@ function getWalletBytecodeHash() {
     return web3.utils.keccak256(constructorByteCode)
 }
 
-async function getWalletAddress(nativeAddress, externalAddress) {
+async function getWalletAddress(nativeAddress, externalAddress, chainId) {
     const factory = await getWalletFactory()
-    return factory.getWalletAddress(nativeAddress, externalAddress, getWalletBytecodeHash())
+    return factory.getWalletAddress(nativeAddress, externalAddress, chainId, getWalletBytecodeHash())
 }
 
 async function createWallet({ nativeAddress, externalAddress, vaultAddress }) {
