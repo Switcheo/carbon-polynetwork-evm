@@ -1,7 +1,5 @@
 const BalanceReader = artifacts.require('BalanceReader')
-const Vault = artifacts.require('Vault')
-const Council = artifacts.require('Council')
-const WalletFactory = artifacts.require('WalletFactory')
+const LockProxy = artifacts.require('LockProxy')
 const Wallet = artifacts.require('Wallet')
 const JRCoin = artifacts.require('JRCoin')
 
@@ -12,13 +10,9 @@ const { ETHER_ADDR } = require('../constants')
 
 const abiDecoder = require('abi-decoder')
 abiDecoder.addABI(JRCoin.abi)
-abiDecoder.addABI(Vault.abi)
-abiDecoder.addABI(Council.abi)
 
 async function getBalanceReader() { return await BalanceReader.deployed() }
-async function getVault() { return await Vault.deployed() }
-async function getCouncil() { return await Council.deployed() }
-async function getWalletFactory() { return await WalletFactory.deployed() }
+async function getLockProxy() { return await LockProxy.deployed() }
 async function getJrc() { return await JRCoin.deployed() }
 
 function newAddress() {
@@ -31,15 +25,15 @@ function getWalletBytecodeHash() {
     return web3.utils.keccak256(constructorByteCode)
 }
 
-async function getWalletAddress(nativeAddress, externalAddress) {
-    const factory = await getWalletFactory()
-    return factory.getWalletAddress(nativeAddress, externalAddress, getWalletBytecodeHash())
+async function getWalletAddress(owner, swthAddress) {
+    const proxy = await getLockProxy()
+    return proxy.getWalletAddress(owner, swthAddress, getWalletBytecodeHash())
 }
 
-async function createWallet({ nativeAddress, externalAddress, vaultAddress }) {
-    const factory = await getWalletFactory()
-    const walletAddress = await factory.createWallet.call(nativeAddress, externalAddress, vaultAddress)
-    await factory.createWallet(nativeAddress, externalAddress, vaultAddress)
+async function createWallet({ owner, swthAddress }) {
+    const proxy = await getLockProxy()
+    const walletAddress = await proxy.createWallet.call(owner, swthAddress)
+    await proxy.createWallet(owner, swthAddress)
 
     return Wallet.at(walletAddress)
 }
@@ -167,151 +161,12 @@ async function signMessage(message, signer) {
     return parseSignature(signature)
 }
 
-async function getSignatureParams({ message, signers }) {
-    signers.sort((a, b) => {
-        a = web3.utils.toBN(a)
-        b = web3.utils.toBN(b)
-        if (a.eq(b)) { return 0 }
-        if (a.gt(b)) { return 1 }
-        return -1
-    })
-
-    const signatures = { v: [], r: [], s: [] }
-    for (let i = 0; i < signers.length; i++) {
-        const { v, r, s } = await signMessage(message, signers[i])
-        signatures.v.push(v)
-        signatures.r.push(r)
-        signatures.s.push(s)
-    }
-
-    return [
-        message,
-        signers,
-        signatures.v,
-        signatures.r,
-        signatures.s
-    ]
-}
-
-async function getUpdateVotingPowersParams({
-    voters, powers, totalPower, nonce, signers
-}) {
-    const council = await getCouncil()
-    const message = web3.utils.soliditySha3(
-        { type: 'string', value: 'updateVotingPowers' },
-        { type: 'address', value: council.address },
-        { type: 'address[]', value: voters },
-        { type: 'uint256[]', value: powers },
-        { type: 'uint256', value: totalPower },
-        { type: 'uint256', value: nonce }
-    )
-
-    const signatureParams = await getSignatureParams({ message, signers })
-
-    return [
-        voters,
-        powers,
-        totalPower,
-        nonce,
-        signatureParams[1],
-        signatureParams[2],
-        signatureParams[3],
-        signatureParams[4]
-    ]
-}
-
-async function getAddWithdrawerParams({ withdrawer, nonce, signers }) {
-    const council = await getCouncil()
-    const message = web3.utils.soliditySha3(
-        { type: 'string', value: 'addWithdrawer' },
-        { type: 'address', value: council.address },
-        { type: 'address', value: withdrawer },
-        { type: 'uint256', value: nonce }
-    )
-
-    const signatureParams = await getSignatureParams({ message, signers })
-
-    return [
-        withdrawer,
-        nonce,
-        signatureParams[1],
-        signatureParams[2],
-        signatureParams[3],
-        signatureParams[4]
-    ]
-}
-
-async function getRemoveWithdrawerParams({ signers }) {
-    const council = await getCouncil()
-    const message = web3.utils.soliditySha3(
-        { type: 'string', value: 'removeWithdrawer' },
-        { type: 'address', value: council.address }
-    )
-
-    const signatureParams = await getSignatureParams({ message, signers })
-
-    return [
-        signatureParams[1],
-        signatureParams[2],
-        signatureParams[3],
-        signatureParams[4]
-    ]
-}
-
-async function getAddMerkleRootParams({
-    merkleRoot, blockTime, processedDeposits, withdrawalHash, numWithdrawals, signers
-}) {
-    const council = await getCouncil()
-    const message = web3.utils.soliditySha3(
-        { type: 'string', value: 'addMerkleRoot' },
-        { type: 'address', value: council.address },
-        { type: 'bytes32', value: merkleRoot },
-        { type: 'uint256', value: blockTime },
-        { type: 'bytes32[]', value: processedDeposits },
-        { type: 'bytes32', value: withdrawalHash },
-        { type: 'uint256', value: numWithdrawals }
-    )
-
-    const signatureParams = await getSignatureParams({ message, signers })
-
-    return [
-        merkleRoot,
-        blockTime,
-        processedDeposits,
-        withdrawalHash,
-        numWithdrawals,
-        signatureParams[1],
-        signatureParams[2],
-        signatureParams[3],
-        signatureParams[4]
-    ]
-}
-
-async function hashWithdrawal({
-    receivingAddress, assetId, amount, conversionRate, nonce
-}) {
-    const council = await getCouncil()
-    const message = web3.utils.soliditySha3(
-        { type: 'string', value: 'withdraw' },
-        { type: 'address', value: council.address },
-        { type: 'address', value: receivingAddress },
-        { type: 'address', value: assetId },
-        { type: 'uint256', value: amount },
-        { type: 'uint256[]', value: conversionRate },
-        { type: 'uint256', value: nonce }
-    )
-
-    return message
-}
-
 module.exports = {
     web3,
     getBalanceReader,
-    getVault,
-    getCouncil,
     newAddress,
     getWalletBytecodeHash,
-    getWalletFactory,
+    getLockProxy,
     getWalletAddress,
     getJrc,
     createWallet,
@@ -321,11 +176,5 @@ module.exports = {
     assertEvents,
     assertBalance,
     parseSignature,
-    signMessage,
-    getSignatureParams,
-    getUpdateVotingPowersParams,
-    getAddWithdrawerParams,
-    getRemoveWithdrawerParams,
-    getAddMerkleRootParams,
-    hashWithdrawal
+    signMessage
 }

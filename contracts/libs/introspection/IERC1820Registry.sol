@@ -1,4 +1,4 @@
-pragma solidity 0.6.5;
+pragma solidity 0.6.12;
 
 /**
  * @dev Interface of the global ERC1820 Registry, as defined in the

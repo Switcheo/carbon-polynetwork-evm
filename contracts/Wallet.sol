@@ -1,18 +1,24 @@
-pragma solidity 0.6.5;
+pragma solidity 0.6.12;
 
 interface ERC20 {
     function approve(address spender, uint256 amount) external returns (bool);
     function transfer(address recipient, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
 }
 
 contract Wallet {
+    bool public isInitialized;
     address public creator;
-    bool isInitialized;
+    address public owner;
+    string public swthAddress;
 
-    function initialize() external {
+    function initialize(address _owner, string calldata _swthAddress) external {
         require(isInitialized == false, "Contract already initialized");
         isInitialized = true;
         creator = msg.sender;
+        owner = _owner;
+        swthAddress = _swthAddress;
     }
 
     function sendETHToCreator(uint256 amount) external {
