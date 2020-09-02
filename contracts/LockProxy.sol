@@ -74,10 +74,10 @@ contract LockProxy {
 
     function getWalletAddress(
         address _ownerAddress,
-        string memory _swthAddress,
+        string calldata _swthAddress,
         bytes32 _bytecodeHash
     )
-        public
+        external
         view
         returns (address)
     {
@@ -112,12 +112,12 @@ contract LockProxy {
     }
 
     function registerAsset(
-        bytes memory _argsBs,
-        bytes memory _fromContractAddr,
+        bytes calldata _argsBs,
+        bytes calldata _fromContractAddr,
         uint64 _fromChainId
     )
         onlyManagerContract
-        public
+        external
         returns (bool)
     {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
@@ -132,6 +132,31 @@ contract LockProxy {
         return true;
     }
 
+    function delegateAsset(
+        bytes calldata _targetProxyHash,
+        bytes calldata _toAssetHash
+    )
+        external
+    {
+        require(_targetProxyHash.length != 20, "Invalid targetProxyHash");
+
+        address assetHash = msg.sender;
+        _markAssetAsRegistered(assetHash, _targetProxyHash, _toAssetHash);
+
+        RegisterAssetTxArgs memory txArgs = RegisterAssetTxArgs({
+            assetHash: Utils.addressToBytes(assetHash),
+            nativeAssetHash: _toAssetHash
+        });
+
+        bytes memory txData = _serializeRegisterAssetTxArgs(txArgs);
+
+        Ccm ccm = _getCcm();
+        require(
+            ccm.crossChain(counterpartChainId, _targetProxyHash, "registerAsset", txData),
+            "EthCrossChainManager crossChain executed error"
+        );
+    }
+
     // _values[0]: amount
     // _values[1]: feeAmount
     // _values[2]: nonce
@@ -139,12 +164,12 @@ contract LockProxy {
     function lockFromWallet(
         address payable _walletAddress,
         address _assetHash,
-        bytes memory _targetProxyHash,
-        bytes memory _toAssetHash,
-        bytes memory _feeAddress,
-        uint256[] memory _values,
+        bytes calldata _targetProxyHash,
+        bytes calldata _toAssetHash,
+        bytes calldata _feeAddress,
+        uint256[] calldata _values,
         uint8 _v,
-        bytes32[] memory _rs
+        bytes32[] calldata _rs
     )
         external
         returns (bool)
@@ -182,11 +207,11 @@ contract LockProxy {
     // _values[3]: callAmount
     function lock(
         address _assetHash,
-        bytes memory _targetProxyHash,
-        bytes memory _toAddress,
-        bytes memory _toAssetHash,
-        bytes memory _feeAddress,
-        uint256[] memory _values
+        bytes calldata _targetProxyHash,
+        bytes calldata _toAddress,
+        bytes calldata _toAssetHash,
+        bytes calldata _feeAddress,
+        uint256[] calldata _values
     )
         external
         payable
@@ -211,12 +236,12 @@ contract LockProxy {
     // withdrawals to certain receiving addresses might fail
     // this should be validated before the txn to the counterpart chain is sent
     function unlock(
-        bytes memory _argsBs,
-        bytes memory _fromContractAddr,
+        bytes calldata _argsBs,
+        bytes calldata _fromContractAddr,
         uint64 _fromChainId
     )
         onlyManagerContract
-        public
+        external
         returns (bool)
     {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
@@ -303,7 +328,7 @@ contract LockProxy {
         });
 
         bytes memory txData = _serializeTxArgs(txArgs);
-        Ccm ccm = _getEccm();
+        Ccm ccm = _getCcm();
         require(
             ccm.crossChain(counterpartChainId, _targetProxyHash, "unlock", txData),
             "EthCrossChainManager crossChain executed error!"
@@ -465,6 +490,15 @@ contract LockProxy {
         return args;
     }
 
+    function _serializeRegisterAssetTxArgs(RegisterAssetTxArgs memory args) internal pure returns (bytes memory) {
+        bytes memory buff;
+        buff = abi.encodePacked(
+            ZeroCopySink.WriteVarBytes(args.assetHash),
+            ZeroCopySink.WriteVarBytes(args.nativeAssetHash)
+        );
+        return buff;
+    }
+
     function _deserializeRegisterAssetTxArgs(bytes memory valueBs) internal pure returns (RegisterAssetTxArgs memory) {
         RegisterAssetTxArgs memory args;
         uint256 off = 0;
@@ -473,7 +507,7 @@ contract LockProxy {
         return args;
     }
 
-    function _getEccm() internal view returns (Ccm) {
+    function _getCcm() internal view returns (Ccm) {
       Ccm ccm = Ccm(ccmProxy.getEthCrossChainManager());
       return ccm;
     }
@@ -487,7 +521,7 @@ contract LockProxy {
         address _ownerAddress,
         string memory _swthAddress
     )
-        public
+        private
         pure
         returns (bytes32)
     {
