@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity 0.6.12;
 
 import "./libs/common/ZeroCopySource.sol";
@@ -16,6 +18,10 @@ interface CcmProxy {
 }
 
 contract LockProxy is ReentrancyGuard {
+    struct ExtensionTxArgs {
+        bytes extensionAddress;
+    }
+
     struct RegisterAssetTxArgs {
         bytes assetHash;
         bytes nativeAssetHash;
@@ -39,8 +45,9 @@ contract LockProxy is ReentrancyGuard {
     uint64 public counterpartChainId;
     uint256 public currentNonce = 0;
 
-    mapping(bytes32 => bool) public seenMessages;
     mapping(address => bytes32) public registry;
+    mapping(bytes32 => bool) public seenMessages;
+    mapping(address => bool) public extensions;
 
     event LockEvent(
         address fromAssetHash,
@@ -117,6 +124,44 @@ contract LockProxy is ReentrancyGuard {
 
         Wallet wallet = new Wallet{salt: salt}();
         wallet.initialize(_ownerAddress, _swthAddress);
+
+        return true;
+    }
+
+    function addExtension(
+        bytes calldata _argsBs,
+        bytes calldata /* _fromContractAddr */,
+        uint64 _fromChainId
+    )
+        external
+        onlyManagerContract
+        nonReentrant
+        returns (bool)
+    {
+        require(_fromChainId == counterpartChainId, "Invalid chain ID");
+
+        ExtensionTxArgs memory args = _deserializeExtensionTxArgs(_argsBs);
+        address extensionAddress = Utils.bytesToAddress(args.extensionAddress);
+        extensions[extensionAddress] = true;
+
+        return true;
+    }
+
+    function removeExtension(
+        bytes calldata _argsBs,
+        bytes calldata /* _fromContractAddr */,
+        uint64 _fromChainId
+    )
+        external
+        onlyManagerContract
+        nonReentrant
+        returns (bool)
+    {
+        require(_fromChainId == counterpartChainId, "Invalid chain ID");
+
+        ExtensionTxArgs memory args = _deserializeExtensionTxArgs(_argsBs);
+        address extensionAddress = Utils.bytesToAddress(args.extensionAddress);
+        extensions[extensionAddress] = false;
 
         return true;
     }
@@ -275,6 +320,37 @@ contract LockProxy is ReentrancyGuard {
         _transferOut(toAssetHash, toAddress, args.amount);
 
         emit UnlockEvent(toAssetHash, toAddress, args.amount, _argsBs);
+        return true;
+    }
+
+    function transferToExtension(
+        address _receivingAddress,
+        address _assetHash,
+        uint256 _amount
+    )
+        external
+        returns (bool)
+    {
+        require(
+            extensions[msg.sender] == true,
+            "Invalid extension"
+        );
+
+        if (_assetHash == ETH_ASSET_HASH) {
+            address(uint160(_receivingAddress)).transfer(_amount);
+            return true;
+        }
+
+        ERC20 token = ERC20(_assetHash);
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                _receivingAddress,
+                _amount
+            )
+        );
+
         return true;
     }
 
@@ -522,6 +598,13 @@ contract LockProxy is ReentrancyGuard {
         uint256 off = 0;
         (args.assetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
         (args.nativeAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
+        return args;
+    }
+
+    function _deserializeExtensionTxArgs(bytes memory valueBs) internal pure returns (ExtensionTxArgs memory) {
+        ExtensionTxArgs memory args;
+        uint256 off = 0;
+        (args.extensionAddress, off) = ZeroCopySource.NextVarBytes(valueBs, off);
         return args;
     }
 
