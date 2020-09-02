@@ -21,6 +21,14 @@ contract Wallet {
         swthAddress = _swthAddress;
     }
 
+    /// @dev Allow this contract to receive Ethereum
+    receive() external payable {}
+
+    /// @dev Allow this contract to receive ERC223 tokens
+    // An empty implementation is required so that the ERC223 token will not
+    // throw an error on transfer
+    function tokenFallback(address, uint, bytes calldata) external {}
+
     function sendETHToCreator(uint256 amount) external {
         require(msg.sender == creator, "Sender must be creator");
         address(uint160(creator)).transfer(amount);
@@ -39,9 +47,6 @@ contract Wallet {
             )
         );
     }
-
-    /// @dev Allow this contract to receive Ethereum
-    receive() external payable {}
 
     /**
      * @dev Imitates a Solidity high-level call (i.e. a regular function call to a contract), relaxing the requirement

@@ -73,6 +73,11 @@ contract LockProxy is ReentrancyGuard {
         _;
     }
 
+    /// @dev Allow this contract to receive ERC223 tokens
+    // An empty implementation is required so that the ERC223 token will not
+    // throw an error on transfer
+    function tokenFallback(address, uint, bytes calldata) external {}
+
     function getWalletAddress(
         address _ownerAddress,
         string calldata _swthAddress,
