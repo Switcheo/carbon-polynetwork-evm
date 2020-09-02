@@ -35,7 +35,7 @@ contract LockProxy {
     address public constant ETH_ASSET_HASH = address(0);
 
     CcmProxy public ccmProxy;
-    uint64 public targetChainId;
+    uint64 public counterpartChainId;
     uint256 public currentNonce = 0;
 
     mapping(bytes32 => bool) public seenMessages;
@@ -50,10 +50,17 @@ contract LockProxy {
         bytes txArgs
     );
 
-    constructor(address _ccmProxyAddress, uint64 _targetChainId) public {
-        require(_targetChainId > 0, "targetChainId cannot be zero");
+    event UnlockEvent(
+        address toAssetHash,
+        address toAddress,
+        uint256 amount,
+        bytes txArgs
+    );
+
+    constructor(address _ccmProxyAddress, uint64 _counterpartChainId) public {
+        require(_counterpartChainId > 0, "counterpartChainId cannot be zero");
         require(_ccmProxyAddress != address(0), "ccmProxyAddress cannot be empty");
-        targetChainId = _targetChainId;
+        counterpartChainId = _counterpartChainId;
         ccmProxy = CcmProxy(_ccmProxyAddress);
     }
 
@@ -113,7 +120,7 @@ contract LockProxy {
         public
         returns (bool)
     {
-        require(_fromChainId == targetChainId, "Invalid chain ID");
+        require(_fromChainId == counterpartChainId, "Invalid chain ID");
 
         RegisterAssetTxArgs memory args = _deserializeRegisterAssetTxArgs(_argsBs);
         _markAssetAsRegistered(
@@ -201,6 +208,33 @@ contract LockProxy {
         return true;
     }
 
+    // withdrawals to certain receiving addresses might fail
+    // this should be validated before the txn to the counterpart chain is sent
+    function unlock(
+        bytes memory _argsBs,
+        bytes memory _fromContractAddr,
+        uint64 _fromChainId
+    )
+        onlyManagerContract
+        public
+        returns (bool)
+    {
+        require(_fromChainId == counterpartChainId, "Invalid chain ID");
+
+        TxArgs memory args = _deserializeTxArgs(_argsBs);
+        require(args.fromAssetHash.length == 20, "Invalid fromAssetHash");
+        require(args.toAssetHash.length == 20, "Invalid toAssetHash");
+
+        address toAssetHash = Utils.bytesToAddress(args.toAssetHash);
+        address toAddress = Utils.bytesToAddress(args.toAddress);
+
+        _validateAssetRegistration(toAssetHash, _fromContractAddr, args.fromAssetHash);
+        _transferOut(toAssetHash, toAddress, args.amount);
+
+        emit UnlockEvent(toAssetHash, toAddress, args.amount, _argsBs);
+        return true;
+    }
+
     function _markAssetAsRegistered(
         address _assetHash,
         bytes memory _proxyAddress,
@@ -271,11 +305,11 @@ contract LockProxy {
         bytes memory txData = _serializeTxArgs(txArgs);
         Ccm ccm = _getEccm();
         require(
-            ccm.crossChain(targetChainId, _targetProxyHash, "unlock", txData),
+            ccm.crossChain(counterpartChainId, _targetProxyHash, "unlock", txData),
             "EthCrossChainManager crossChain executed error!"
         );
 
-        emit LockEvent(_fromAssetHash, msg.sender, targetChainId, _toAssetHash, _toAddress, txData);
+        emit LockEvent(_fromAssetHash, msg.sender, counterpartChainId, _toAssetHash, _toAddress, txData);
     }
 
     // _values[0]: amount
@@ -357,6 +391,29 @@ contract LockProxy {
         require(transferredAmount == _amount, "Tokens transferred does not match the expected amount");
     }
 
+    function _transferOut(
+        address _toAddress,
+        address _assetHash,
+        uint256 _amount
+    )
+        private
+    {
+        if (_assetHash == ETH_ASSET_HASH) {
+            address(uint160(_toAddress)).transfer(_amount);
+            return;
+        }
+
+        ERC20 token = ERC20(_assetHash);
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.transfer.selector,
+                _toAddress,
+                _amount
+            )
+        );
+    }
+
     function _transferERC20In(address _walletAddress, address _assetHash, uint256 _amount) private {
         Wallet wallet = Wallet(address(uint160(_walletAddress)));
         wallet.sendERC20ToCreator(_assetHash, _amount);
@@ -396,6 +453,16 @@ contract LockProxy {
             ZeroCopySink.WriteUint255(args.nonce)
         );
         return buff;
+    }
+
+    function _deserializeTxArgs(bytes memory valueBs) internal pure returns (TxArgs memory) {
+        TxArgs memory args;
+        uint256 off = 0;
+        (args.fromAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
+        (args.toAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
+        (args.toAddress, off) = ZeroCopySource.NextVarBytes(valueBs, off);
+        (args.amount, off) = ZeroCopySource.NextUint256(valueBs, off);
+        return args;
     }
 
     function _deserializeRegisterAssetTxArgs(bytes memory valueBs) internal pure returns (RegisterAssetTxArgs memory) {
