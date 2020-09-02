@@ -2,6 +2,7 @@ pragma solidity 0.6.12;
 
 import "./libs/common/ZeroCopySource.sol";
 import "./libs/common/ZeroCopySink.sol";
+import "./libs/utils/ReentrancyGuard.sol";
 import "./libs/utils/Utils.sol";
 
 import "./Wallet.sol";
@@ -14,7 +15,7 @@ interface CcmProxy {
     function getEthCrossChainManager() external view returns (address);
 }
 
-contract LockProxy {
+contract LockProxy is ReentrancyGuard {
     struct RegisterAssetTxArgs {
         bytes assetHash;
         bytes nativeAssetHash;
@@ -98,9 +99,11 @@ contract LockProxy {
         string calldata _swthAddress
     )
         external
+        nonReentrant
+        returns (bool)
     {
-        require(_ownerAddress != address(0), "Empty nativeAddress");
-        require(bytes(_swthAddress).length != 0, "Empty externalAddress");
+        require(_ownerAddress != address(0), "Empty ownerAddress");
+        require(bytes(_swthAddress).length != 0, "Empty swthAddress");
 
         bytes32 salt = _getSalt(
             _ownerAddress,
@@ -109,6 +112,8 @@ contract LockProxy {
 
         Wallet wallet = new Wallet{salt: salt}();
         wallet.initialize(_ownerAddress, _swthAddress);
+
+        return true;
     }
 
     function registerAsset(
@@ -116,8 +121,9 @@ contract LockProxy {
         bytes calldata _fromContractAddr,
         uint64 _fromChainId
     )
-        onlyManagerContract
         external
+        onlyManagerContract
+        nonReentrant
         returns (bool)
     {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
@@ -137,6 +143,8 @@ contract LockProxy {
         bytes calldata _toAssetHash
     )
         external
+        nonReentrant
+        returns (bool)
     {
         require(_targetProxyHash.length != 20, "Invalid targetProxyHash");
 
@@ -155,6 +163,8 @@ contract LockProxy {
             ccm.crossChain(counterpartChainId, _targetProxyHash, "registerAsset", txData),
             "EthCrossChainManager crossChain executed error"
         );
+
+        return true;
     }
 
     // _values[0]: amount
@@ -172,6 +182,7 @@ contract LockProxy {
         bytes32[] calldata _rs
     )
         external
+        nonReentrant
         returns (bool)
     {
         Wallet wallet = Wallet(_walletAddress);
@@ -215,6 +226,7 @@ contract LockProxy {
     )
         external
         payable
+        nonReentrant
         returns (bool)
     {
 
@@ -241,6 +253,7 @@ contract LockProxy {
         uint64 _fromChainId
     )
         onlyManagerContract
+        nonReentrant
         external
         returns (bool)
     {
