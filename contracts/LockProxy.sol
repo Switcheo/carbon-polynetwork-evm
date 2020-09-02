@@ -51,7 +51,8 @@ contract LockProxy {
     );
 
     constructor(address _ccmProxyAddress, uint64 _targetChainId) public {
-        require(targetChainId > 0, "targetChainId cannot be zero");
+        require(_targetChainId > 0, "targetChainId cannot be zero");
+        require(_ccmProxyAddress != address(0), "ccmProxyAddress cannot be empty");
         targetChainId = _targetChainId;
         ccmProxy = CcmProxy(_ccmProxyAddress);
     }
