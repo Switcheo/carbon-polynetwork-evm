@@ -580,7 +580,7 @@ contract LockProxy is ReentrancyGuard {
         (args.fromAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
         (args.toAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
         (args.toAddress, off) = ZeroCopySource.NextVarBytes(valueBs, off);
-        (args.amount, off) = ZeroCopySource.NextUint256(valueBs, off);
+        (args.amount, off) = ZeroCopySource.NextUint255(valueBs, off);
         return args;
     }
 
