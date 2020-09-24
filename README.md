@@ -24,3 +24,8 @@ ganache-cli -m "ladder soft balcony kiwi sword shadow volcano reform cricket wal
 6. Run `truffle migrate` to deploy the contracts to Ganache
 7. Run `truffle test` to run test files
 8. `truffle test test/TestVault/*.js` can be used to test files in a folder
+
+
+## Addresses
+
+Devnet LockProxy (Ropsten): 0xbc51Ebf652ff116902614879920087042e9E546b
