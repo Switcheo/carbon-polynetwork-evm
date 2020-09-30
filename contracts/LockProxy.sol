@@ -80,6 +80,9 @@ contract LockProxy is ReentrancyGuard {
         _;
     }
 
+    /// @dev Allow this contract to receive Ethereum
+    receive() external payable {}
+
     /// @dev Allow this contract to receive ERC223 tokens
     // An empty implementation is required so that the ERC223 token will not
     // throw an error on transfer
