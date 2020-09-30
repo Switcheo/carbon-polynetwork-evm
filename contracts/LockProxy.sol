@@ -406,7 +406,7 @@ contract LockProxy is ReentrancyGuard {
         private
     {
         require(_targetProxyHash.length == 20, "invalid targetProxyHash");
-        require(_toAssetHash.length == 20, "empty toAssetHash");
+        require(_toAssetHash.length > 0, "empty toAssetHash");
         require(_toAddress.length > 0, "empty toAddress");
         require(_amount > 0, "amount must be more than zero!");
         require(_feeAmount < _amount, "fee amount cannot be greater than amount");
