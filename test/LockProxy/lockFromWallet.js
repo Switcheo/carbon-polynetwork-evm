@@ -74,6 +74,32 @@ contract('Test lockFromWallet', async (accounts) => {
         })
     })
 
+    contract('if the wallet address was not previously recorded', async () => {
+        it('raises an error', async () => {
+            const nonce = 1
+            const amount = 200
+            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, targetProxyHash, toAssetHash, chainId)
+            await wallet.send(amount)
+            await assertAsync(web3.eth.getBalance(wallet.address), amount)
+
+            await assertReversion(lockFromWallet({
+                walletAddress: owner,
+                assetHash: ETH_ASSET_HASH,
+                targetProxyHash,
+                toAssetHash,
+                feeAddress,
+                amount,
+                feeAmount: '0',
+                callAmount: 100,
+                nonce,
+                signer: owner
+            }), 'Invalid wallet address')
+
+            await assertAsync(web3.eth.getBalance(wallet.address), amount)
+            await assertAsync(web3.eth.getBalance(proxy.address), '0')
+        })
+    })
+
     contract('if the eth transferred does not match the expected amount', async () => {
         it('raises an error', async () => {
             const nonce = 1

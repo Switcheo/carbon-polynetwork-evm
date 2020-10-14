@@ -9,6 +9,11 @@ interface ERC20 {
     function balanceOf(address account) external view returns (uint256);
 }
 
+/// @title The Wallet contract for Switcheo TradeHub
+/// @author Switcheo Network
+/// @notice This contract faciliates deposits for Switcheo TradeHub.
+/// @dev This contract is used together with the LockProxy contract to allow users
+/// to deposit funds without requiring them to have ETH
 contract Wallet {
     bool public isInitialized;
     address public creator;
@@ -31,11 +36,16 @@ contract Wallet {
     // throw an error on transfer
     function tokenFallback(address, uint, bytes calldata) external {}
 
-    function sendETHToCreator(uint256 amount) external {
+    /// @dev send ETH from this contract to its creator
+    function sendETHToCreator(uint256 _amount) external {
         require(msg.sender == creator, "Sender must be creator");
-        address(uint160(creator)).transfer(amount);
+        // we use `call` here following the recommendation from
+        // https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/
+        (bool success,  ) = creator.call{value: _amount}("");
+        require(success, "Transfer failed");
     }
 
+    /// @dev send tokens from this contract to its creator
     function sendERC20ToCreator(address _assetId, uint256 _amount) external {
         require(msg.sender == creator, "Sender must be creator");
 

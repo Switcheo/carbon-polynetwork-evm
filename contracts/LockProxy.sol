@@ -25,16 +25,19 @@ interface CCMProxy {
 contract LockProxy is ReentrancyGuard {
     using SafeMath for uint256;
 
+    // used for the cross-chain addExtension and removeExtension methods
     struct ExtensionTxArgs {
         bytes extensionAddress;
     }
 
+    // used for the cross-chain registerAsset method
     struct RegisterAssetTxArgs {
         bytes assetHash;
         bytes nativeAssetHash;
     }
 
-    struct TxArgs {
+    // used for the cross-chain lock and unlock methods
+    struct TransferTxArgs {
         bytes fromAssetHash;
         bytes toAssetHash;
         bytes toAddress;
@@ -45,6 +48,7 @@ contract LockProxy is ReentrancyGuard {
         uint256 nonce;
     }
 
+    // used to create a unique salt for wallet creation
     bytes public constant SALT_PREFIX = "switcheo-eth-wallet-factory-v1";
     address public constant ETH_ASSET_HASH = address(0);
 
@@ -52,9 +56,18 @@ contract LockProxy is ReentrancyGuard {
     uint64 public counterpartChainId;
     uint256 public currentNonce = 0;
 
+    // a mapping of assetHashes to the hash of
+    // (associated proxy address on Switcheo TradeHub, associated asset hash on Switcheo TradeHub)
     mapping(address => bytes32) public registry;
+
+    // a record of signed messages to prevent replay attacks
     mapping(bytes32 => bool) public seenMessages;
+
+    // a mapping of extension contracts
     mapping(address => bool) public extensions;
+
+    // a record of created wallets
+    mapping(address => bool) public wallets;
 
     event LockEvent(
         address fromAssetHash,
@@ -91,10 +104,16 @@ contract LockProxy is ReentrancyGuard {
     receive() external payable {}
 
     /// @dev Allow this contract to receive ERC223 tokens
-    // An empty implementation is required so that the ERC223 token will not
-    // throw an error on transfer
+    /// An empty implementation is required so that the ERC223 token will not
+    /// throw an error on transfer, this is specific to ERC223 tokens which
+    /// require this implementation, e.g. DGTX
     function tokenFallback(address, uint, bytes calldata) external {}
 
+    /// @dev Calculate the wallet address for the given owner and Switcheo TradeHub address
+    /// @param _ownerAddress the Ethereum address which the user has control over, i.e. can sign msgs with
+    /// @param _swthAddress the hex value of the user's Switcheo TradeHub address
+    /// @param _bytecodeHash the hash of the wallet contract's bytecode
+    /// @return the wallet address
     function getWalletAddress(
         address _ownerAddress,
         string calldata _swthAddress,
@@ -116,6 +135,10 @@ contract LockProxy is ReentrancyGuard {
         return address(bytes20(data << 96));
     }
 
+    /// @dev Create the wallet for the given owner and Switcheo TradeHub address
+    /// @param _ownerAddress the Ethereum address which the user has control over, i.e. can sign msgs with
+    /// @param _swthAddress the hex value of the user's Switcheo TradeHub address
+    /// @return true if success
     function createWallet(
         address _ownerAddress,
         string calldata _swthAddress
@@ -134,12 +157,17 @@ contract LockProxy is ReentrancyGuard {
 
         Wallet wallet = new Wallet{salt: salt}();
         wallet.initialize(_ownerAddress, _swthAddress);
+        wallets[address(wallet)] = true;
 
         return true;
     }
 
+    /// @dev Add a contract as an extension
+    /// @param _argsBz the serialized ExtensionTxArgs
+    /// @param _fromChainId the originating chainId
+    /// @return true if success
     function addExtension(
-        bytes calldata _argsBs,
+        bytes calldata _argsBz,
         bytes calldata /* _fromContractAddr */,
         uint64 _fromChainId
     )
@@ -150,15 +178,19 @@ contract LockProxy is ReentrancyGuard {
     {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
 
-        ExtensionTxArgs memory args = _deserializeExtensionTxArgs(_argsBs);
+        ExtensionTxArgs memory args = _deserializeExtensionTxArgs(_argsBz);
         address extensionAddress = Utils.bytesToAddress(args.extensionAddress);
         extensions[extensionAddress] = true;
 
         return true;
     }
 
+    /// @dev Remove a contract from the extensions mapping
+    /// @param _argsBz the serialized ExtensionTxArgs
+    /// @param _fromChainId the originating chainId
+    /// @return true if success
     function removeExtension(
-        bytes calldata _argsBs,
+        bytes calldata _argsBz,
         bytes calldata /* _fromContractAddr */,
         uint64 _fromChainId
     )
@@ -169,15 +201,21 @@ contract LockProxy is ReentrancyGuard {
     {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
 
-        ExtensionTxArgs memory args = _deserializeExtensionTxArgs(_argsBs);
+        ExtensionTxArgs memory args = _deserializeExtensionTxArgs(_argsBz);
         address extensionAddress = Utils.bytesToAddress(args.extensionAddress);
         extensions[extensionAddress] = false;
 
         return true;
     }
 
+    /// @dev Marks an asset as registered by mapping the asset's address to
+    /// the specified _fromContractAddr and assetHash on Switcheo TradeHub
+    /// @param _argsBz the serialized RegisterAssetTxArgs
+    /// @param _fromContractAddr the associated contract address on Switcheo TradeHub
+    /// @param _fromChainId the originating chainId
+    /// @return true if success
     function registerAsset(
-        bytes calldata _argsBs,
+        bytes calldata _argsBz,
         bytes calldata _fromContractAddr,
         uint64 _fromChainId
     )
@@ -188,7 +226,7 @@ contract LockProxy is ReentrancyGuard {
     {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
 
-        RegisterAssetTxArgs memory args = _deserializeRegisterAssetTxArgs(_argsBs);
+        RegisterAssetTxArgs memory args = _deserializeRegisterAssetTxArgs(_argsBz);
         _markAssetAsRegistered(
             Utils.bytesToAddress(args.nativeAssetHash),
             _fromContractAddr,
@@ -198,10 +236,19 @@ contract LockProxy is ReentrancyGuard {
         return true;
     }
 
-    // _values[0]: amount
-    // _values[1]: feeAmount
-    // _values[2]: nonce
-    // _values[3]: callAmount
+    /// @dev Performs a deposit from a Wallet contract
+    /// @param _walletAddress address of the wallet contract
+    /// @param _assetHash the asset to deposit
+    /// @param _targetProxyHash the associated proxy hash on Switcheo TradeHub
+    /// @param _toAssetHash the associated asset hash on Switcheo TradeHub
+    /// @param _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
+    /// @param _values[0]: amount, the number of tokens to deposit
+    /// @param _values[1]: feeAmount, the number of tokens to be used as fees
+    /// @param _values[2]: nonce, to prevent replay attacks
+    /// @param _values[3]: callAmount, some tokens may burn an amount before transfer
+    /// so we allow a callAmount to support these tokens
+    /// @param _v: the v value of the wallet owner's signature
+    /// @param _rs: the r, s values of the wallet owner's signature
     function lockFromWallet(
         address payable _walletAddress,
         address _assetHash,
@@ -216,6 +263,8 @@ contract LockProxy is ReentrancyGuard {
         nonReentrant
         returns (bool)
     {
+        require(wallets[_walletAddress], "Invalid wallet address");
+
         Wallet wallet = Wallet(_walletAddress);
         _validateLockFromWallet(
             wallet.owner(),
@@ -228,6 +277,10 @@ contract LockProxy is ReentrancyGuard {
             _rs
         );
 
+        // it is very important that this function validates the success of a transfer correctly
+        // since, once this line is passed, the deposit is assumed to be successful
+        // which will eventually result in the specified amount of tokens being minted for the
+        // wallet.swthAddress on Switcheo TradeHub
         _transferInFromWallet(_walletAddress, _assetHash, _values[0], _values[3]);
 
         _lock(
@@ -243,9 +296,16 @@ contract LockProxy is ReentrancyGuard {
         return true;
     }
 
-    // _values[0]: amount
-    // _values[1]: feeAmount
-    // _values[2]: callAmount
+    /// @dev Performs a deposit
+    /// @param _assetHash the asset to deposit
+    /// @param _targetProxyHash the associated proxy hash on Switcheo TradeHub
+    /// @param _toAddress the hex version of the Switcheo TradeHub address to deposit to
+    /// @param _toAssetHash the associated asset hash on Switcheo TradeHub
+    /// @param _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
+    /// @param _values[0]: amount, the number of tokens to deposit
+    /// @param _values[1]: feeAmount, the number of tokens to be used as fees
+    /// @param _values[2]: callAmount, some tokens may burn an amount before transfer
+    /// so we allow a callAmount to support these tokens
     function lock(
         address _assetHash,
         bytes calldata _targetProxyHash,
@@ -260,6 +320,10 @@ contract LockProxy is ReentrancyGuard {
         returns (bool)
     {
 
+        // it is very important that this function validates the success of a transfer correctly
+        // since, once this line is passed, the deposit is assumed to be successful
+        // which will eventually result in the specified amount of tokens being minted for the
+        // _toAddress on Switcheo TradeHub
         _transferIn(_assetHash, _values[0], _values[2]);
 
         _lock(
@@ -275,10 +339,13 @@ contract LockProxy is ReentrancyGuard {
         return true;
     }
 
-    // withdrawals to certain receiving addresses might fail
-    // this should be validated before the txn to the counterpart chain is sent
+    /// @dev Performs a withdrawal that was initiated on Switcheo TradeHub
+    /// @param _argsBz the serialized TransferTxArgs
+    /// @param _fromContractAddr the associated contract address on Switcheo TradeHub
+    /// @param _fromChainId the originating chainId
+    /// @return true if success
     function unlock(
-        bytes calldata _argsBs,
+        bytes calldata _argsBz,
         bytes calldata _fromContractAddr,
         uint64 _fromChainId
     )
@@ -289,7 +356,7 @@ contract LockProxy is ReentrancyGuard {
     {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
 
-        TxArgs memory args = _deserializeTxArgs(_argsBs);
+        TransferTxArgs memory args = _deserializeTransferTxArgs(_argsBz);
         require(args.fromAssetHash.length == 20, "Invalid fromAssetHash");
         require(args.toAssetHash.length == 20, "Invalid toAssetHash");
 
@@ -299,17 +366,23 @@ contract LockProxy is ReentrancyGuard {
         _validateAssetRegistration(toAssetHash, _fromContractAddr, args.fromAssetHash);
         _transferOut(toAssetHash, toAddress, args.amount);
 
-        emit UnlockEvent(toAssetHash, toAddress, args.amount, _argsBs);
+        emit UnlockEvent(toAssetHash, toAddress, args.amount, _argsBz);
         return true;
     }
 
-    function transferToExtension(
+    /// @dev Performs a transfer of funds, this is only callable by approved extension contracts
+    /// the `nonReentrant` guard is intentionally not added to this function, to allow for more flexibility.
+    /// The calling contract should be secure and have its own `nonReentrant` guard as needed.
+    /// @param _receivingAddress the address to transfer to
+    /// @param _assetHash the asset to transfer
+    /// @param _amount the amount to transfer
+    /// @return true if success
+    function extensionTransfer(
         address _receivingAddress,
         address _assetHash,
         uint256 _amount
     )
         external
-        nonReentrant
         returns (bool)
     {
         require(
@@ -318,6 +391,9 @@ contract LockProxy is ReentrancyGuard {
         );
 
         if (_assetHash == ETH_ASSET_HASH) {
+            // we use `call` here since the _receivingAddress could be a contract
+            // see https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/
+            // for more info
             (bool success,  ) = _receivingAddress.call{value: _amount}("");
             require(success, "Transfer failed");
             return true;
@@ -336,6 +412,10 @@ contract LockProxy is ReentrancyGuard {
         return true;
     }
 
+    /// @dev Marks an asset as registered by associating it to a specified Switcheo TradeHub proxy and asset hash
+    /// @param _assetHash the address of the asset to mark
+    /// @param _proxyAddress the associated proxy address on Switcheo TradeHub
+    /// @param _toAssetHash the associated asset hash on Switcheo TradeHub
     function _markAssetAsRegistered(
         address _assetHash,
         bytes memory _proxyAddress,
@@ -357,6 +437,10 @@ contract LockProxy is ReentrancyGuard {
         registry[_assetHash] = value;
     }
 
+    /// @dev Validates that an asset's registration matches the given params
+    /// @param _assetHash the address of the asset to check
+    /// @param _proxyAddress the expected proxy address on Switcheo TradeHub
+    /// @param _toAssetHash the expected asset hash on Switcheo TradeHub
     function _validateAssetRegistration(
         address _assetHash,
         bytes memory _proxyAddress,
@@ -373,6 +457,7 @@ contract LockProxy is ReentrancyGuard {
         require(registry[_assetHash] == value, "Asset not registered");
     }
 
+    /// @dev validates the asset registration and calls the CCM contract
     function _lock(
         address _fromAssetHash,
         bytes memory _targetProxyHash,
@@ -392,7 +477,7 @@ contract LockProxy is ReentrancyGuard {
 
         _validateAssetRegistration(_fromAssetHash, _targetProxyHash, _toAssetHash);
 
-        TxArgs memory txArgs = TxArgs({
+        TransferTxArgs memory txArgs = TransferTxArgs({
             fromAssetHash: Utils.addressToBytes(_fromAssetHash),
             toAssetHash: _toAssetHash,
             toAddress: _toAddress,
@@ -403,7 +488,7 @@ contract LockProxy is ReentrancyGuard {
             nonce: _getNextNonce()
         });
 
-        bytes memory txData = _serializeTxArgs(txArgs);
+        bytes memory txData = _serializeTransferTxArgs(txArgs);
         CCM ccm = _getCcm();
         require(
             ccm.crossChain(counterpartChainId, _targetProxyHash, "unlock", txData),
@@ -413,9 +498,7 @@ contract LockProxy is ReentrancyGuard {
         emit LockEvent(_fromAssetHash, msg.sender, counterpartChainId, _toAssetHash, _toAddress, txData);
     }
 
-    // _values[0]: amount
-    // _values[1]: feeAmount
-    // _values[2]: nonce
+    /// @dev validate the signature for lockFromWallet
     function _validateLockFromWallet(
         address _walletOwner,
         address _assetHash,
@@ -444,6 +527,10 @@ contract LockProxy is ReentrancyGuard {
         _validateSignature(message, _walletOwner, _v, _rs[0], _rs[1]);
     }
 
+    /// @dev transfers funds from a Wallet contract into this contract
+    /// the difference between this contract's before and after balance must equal _amount
+    /// this is assumed to be sufficient in ensuring that the expected amount
+    /// of funds were transferred in
     function _transferInFromWallet(
         address payable _walletAddress,
         address _assetHash,
@@ -454,20 +541,29 @@ contract LockProxy is ReentrancyGuard {
     {
         Wallet wallet = Wallet(_walletAddress);
         if (_assetHash == ETH_ASSET_HASH) {
-            uint256 initialBalance = address(this).balance;
+            uint256 before = address(this).balance;
+
             wallet.sendETHToCreator(_callAmount);
-            uint256 transferredAmount = address(this).balance.sub(initialBalance);
-            require(transferredAmount == _amount, "ETH transferred does not match the expected amount");
+
+            uint256 transferred = address(this).balance.sub(before);
+            require(transferred == _amount, "ETH transferred does not match the expected amount");
             return;
         }
 
         ERC20 token = ERC20(_assetHash);
-        uint256 initialBalance = token.balanceOf(address(this));
+        uint256 before = token.balanceOf(address(this));
+
         wallet.sendERC20ToCreator(_assetHash, _callAmount);
-        uint256 transferredAmount = token.balanceOf(address(this)).sub(initialBalance);
-        require(transferredAmount == _amount, "Tokens transferred does not match the expected amount");
+
+        uint256 transferred = token.balanceOf(address(this)).sub(before);
+        require(transferred == _amount, "Tokens transferred does not match the expected amount");
     }
 
+    /// @dev transfers funds from an address into this contract
+    /// for ETH transfers, we only check that msg.value == _amount, and _callAmount is ignored
+    /// for token transfers, the difference between this contract's before and after balance must equal _amount
+    /// these checks are assumed to be sufficient in ensuring that the expected amount
+    /// of funds were transferred in
     function _transferIn(
         address _assetHash,
         uint256 _amount,
@@ -481,7 +577,7 @@ contract LockProxy is ReentrancyGuard {
         }
 
         ERC20 token = ERC20(_assetHash);
-        uint256 initialBalance = token.balanceOf(address(this));
+        uint256 before = token.balanceOf(address(this));
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(
@@ -491,10 +587,11 @@ contract LockProxy is ReentrancyGuard {
                 _callAmount
             )
         );
-        uint256 transferredAmount = token.balanceOf(address(this)).sub(initialBalance);
-        require(transferredAmount == _amount, "Tokens transferred does not match the expected amount");
+        uint256 transferred = token.balanceOf(address(this)).sub(before);
+        require(transferred == _amount, "Tokens transferred does not match the expected amount");
     }
 
+    /// @dev transfers funds from this contract to the _toAddress
     function _transferOut(
         address _toAddress,
         address _assetHash,
@@ -503,6 +600,9 @@ contract LockProxy is ReentrancyGuard {
         private
     {
         if (_assetHash == ETH_ASSET_HASH) {
+            // we use `call` here since the _receivingAddress could be a contract
+            // see https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/
+            // for more info
             (bool success,  ) = _toAddress.call{value: _amount}("");
             require(success, "Transfer failed");
             return;
@@ -519,11 +619,7 @@ contract LockProxy is ReentrancyGuard {
         );
     }
 
-    function _transferERC20In(address _walletAddress, address _assetHash, uint256 _amount) private {
-        Wallet wallet = Wallet(address(uint160(_walletAddress)));
-        wallet.sendERC20ToCreator(_assetHash, _amount);
-    }
-
+    /// @dev validates a signature against the specified user address
     function _validateSignature(
         bytes32 _message,
         address _user,
@@ -545,7 +641,7 @@ contract LockProxy is ReentrancyGuard {
         );
     }
 
-    function _serializeTxArgs(TxArgs memory args) private pure returns (bytes memory) {
+    function _serializeTransferTxArgs(TransferTxArgs memory args) private pure returns (bytes memory) {
         bytes memory buff;
         buff = abi.encodePacked(
             ZeroCopySink.WriteVarBytes(args.fromAssetHash),
@@ -560,28 +656,28 @@ contract LockProxy is ReentrancyGuard {
         return buff;
     }
 
-    function _deserializeTxArgs(bytes memory valueBs) private pure returns (TxArgs memory) {
-        TxArgs memory args;
+    function _deserializeTransferTxArgs(bytes memory valueBz) private pure returns (TransferTxArgs memory) {
+        TransferTxArgs memory args;
         uint256 off = 0;
-        (args.fromAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
-        (args.toAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
-        (args.toAddress, off) = ZeroCopySource.NextVarBytes(valueBs, off);
-        (args.amount, off) = ZeroCopySource.NextUint255(valueBs, off);
+        (args.fromAssetHash, off) = ZeroCopySource.NextVarBytes(valueBz, off);
+        (args.toAssetHash, off) = ZeroCopySource.NextVarBytes(valueBz, off);
+        (args.toAddress, off) = ZeroCopySource.NextVarBytes(valueBz, off);
+        (args.amount, off) = ZeroCopySource.NextUint255(valueBz, off);
         return args;
     }
 
-    function _deserializeRegisterAssetTxArgs(bytes memory valueBs) private pure returns (RegisterAssetTxArgs memory) {
+    function _deserializeRegisterAssetTxArgs(bytes memory valueBz) private pure returns (RegisterAssetTxArgs memory) {
         RegisterAssetTxArgs memory args;
         uint256 off = 0;
-        (args.assetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
-        (args.nativeAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
+        (args.assetHash, off) = ZeroCopySource.NextVarBytes(valueBz, off);
+        (args.nativeAssetHash, off) = ZeroCopySource.NextVarBytes(valueBz, off);
         return args;
     }
 
-    function _deserializeExtensionTxArgs(bytes memory valueBs) private pure returns (ExtensionTxArgs memory) {
+    function _deserializeExtensionTxArgs(bytes memory valueBz) private pure returns (ExtensionTxArgs memory) {
         ExtensionTxArgs memory args;
         uint256 off = 0;
-        (args.extensionAddress, off) = ZeroCopySource.NextVarBytes(valueBs, off);
+        (args.extensionAddress, off) = ZeroCopySource.NextVarBytes(valueBz, off);
         return args;
     }
 

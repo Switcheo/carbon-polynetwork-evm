@@ -36,6 +36,9 @@ The main purpose of the contract is to facilitate deposits and withdrawals into 
 To perform a deposit, the asset to be deposited must first be registered.
 This is done through governance on Switcheo TradeHub, and will result in `LockProxy.registerAsset` being called by the CCM contract.
 
+This registration associates an asset by its Ethereum address to a corresponding proxy address and asset hash on Switcheo TradeHub.
+For example, there could be an asset with asset hash `0x746f6b656e` under Switcheo TradeHub proxy `0x213a5f9f0477b2cfc3a65120971a027e10f9a7ab`. If we want this asset to represent an Ethereum token with Ethereum address: `0xc86e930a5f5cb9230aef750665161b0bfff55484`, we would register `0xc86e930a5f5cb9230aef750665161b0bfff55484` and associate it to `0x213a5f9f0477b2cfc3a65120971a027e10f9a7ab` and `0x746f6b656e` using `LockProxy.registerAsset`.
+
 After the asset is registered, `LockProxy.lock` can be called to perform a deposit.
 This would require the user to have ETH in their address and to call the function using their own address.
 
@@ -60,7 +63,7 @@ However, this structure would be more complicated, and if a new "LockProxy" is r
 
 Withdrawals are initiated on Switcheo TradeHub, and would result in the `LockProxy.unlock` function being called by the CCM contract, the funds would then be transferred to the specified withdrawal address.
 
-To send ETH, `call` is used instead of `transfer`. This is based on the recommendation from https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/, since the withdrawal address could be a contract.
+To send ETH, `call` is used instead of `transfer`. This follows the recommendation from https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/, since the withdrawal address could be a contract.
 
 ## Extensions
 
