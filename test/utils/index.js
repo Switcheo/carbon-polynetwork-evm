@@ -1,5 +1,6 @@
 const BalanceReader = artifacts.require('BalanceReader')
 const LockProxy = artifacts.require('LockProxy')
+const CCMMock = artifacts.require('CCMMock')
 const Wallet = artifacts.require('Wallet')
 const JRCoin = artifacts.require('JRCoin')
 
@@ -13,6 +14,7 @@ abiDecoder.addABI(JRCoin.abi)
 
 async function getBalanceReader() { return await BalanceReader.deployed() }
 async function getLockProxy() { return await LockProxy.deployed() }
+async function getCcm() { return await CCMMock.deployed() }
 async function getJrc() { return await JRCoin.deployed() }
 
 function newAddress() {
@@ -32,10 +34,39 @@ async function getWalletAddress(owner, swthAddress) {
 
 async function createWallet({ owner, swthAddress }) {
     const proxy = await getLockProxy()
-    const walletAddress = await proxy.createWallet.call(owner, swthAddress)
+    const walletAddress = await getWalletAddress(owner, swthAddress)
     await proxy.createWallet(owner, swthAddress)
 
     return Wallet.at(walletAddress)
+}
+
+async function lockFromWallet(
+    { walletAddress, assetHash, targetProxyHash, toAssetHash, amount, feeAmount, nonce, signer }
+) {
+    const feeAddress = '0xaa83739c25970ae1eddaa0b596835e4a9e12d3db'
+    const message = web3.utils.soliditySha3(
+        { type: 'string', value: 'sendTokens' },
+        { type: 'address', value: assetHash },
+        { type: 'bytes', value: targetProxyHash },
+        { type: 'bytes', value: toAssetHash },
+        { type: 'bytes', value: feeAddress },
+        { type: 'uint256', value: amount },
+        { type: 'uint256', value: feeAmount },
+        { type: 'uint256', value: nonce }
+    )
+    const { v, r, s } = await signMessage(message, signer)
+
+    const proxy = await getLockProxy()
+    await proxy.lockFromWallet(
+        walletAddress,
+        assetHash,
+        targetProxyHash,
+        toAssetHash,
+        feeAddress,
+        [amount, feeAmount, nonce, amount],
+        v,
+        [r, s]
+    )
 }
 
 function assertEqual(valueA, valueB) {
@@ -167,9 +198,11 @@ module.exports = {
     newAddress,
     getWalletBytecodeHash,
     getLockProxy,
+    getCcm,
     getWalletAddress,
     getJrc,
     createWallet,
+    lockFromWallet,
     assertEqual,
     assertAsync,
     assertReversion,

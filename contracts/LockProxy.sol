@@ -9,14 +9,18 @@ import "./libs/utils/Utils.sol";
 
 import "./Wallet.sol";
 
-interface Ccm {
+interface CCM {
     function crossChain(uint64 _toChainId, bytes calldata _toContract, bytes calldata _method, bytes calldata _txData) external returns (bool);
 }
 
-interface CcmProxy {
+interface CCMProxy {
     function getEthCrossChainManager() external view returns (address);
 }
 
+/// @title The LockProxy contract for Switcheo TradeHub
+/// @author Switcheo Network
+/// @notice This contract faciliates deposits and withdrawals to Switcheo TradeHub.
+/// @dev The contract also allows for additional features in the future through "extension" contracts.
 contract LockProxy is ReentrancyGuard {
     struct ExtensionTxArgs {
         bytes extensionAddress;
@@ -41,7 +45,7 @@ contract LockProxy is ReentrancyGuard {
     bytes public constant SALT_PREFIX = "switcheo-eth-wallet-factory-v1";
     address public constant ETH_ASSET_HASH = address(0);
 
-    CcmProxy public ccmProxy;
+    CCMProxy public ccmProxy;
     uint64 public counterpartChainId;
     uint256 public currentNonce = 0;
 
@@ -69,7 +73,7 @@ contract LockProxy is ReentrancyGuard {
         require(_counterpartChainId > 0, "counterpartChainId cannot be zero");
         require(_ccmProxyAddress != address(0), "ccmProxyAddress cannot be empty");
         counterpartChainId = _counterpartChainId;
-        ccmProxy = CcmProxy(_ccmProxyAddress);
+        ccmProxy = CCMProxy(_ccmProxyAddress);
     }
 
     modifier onlyManagerContract() {
@@ -191,35 +195,6 @@ contract LockProxy is ReentrancyGuard {
         return true;
     }
 
-    function delegateAsset(
-        bytes calldata _targetProxyHash,
-        bytes calldata _toAssetHash
-    )
-        external
-        nonReentrant
-        returns (bool)
-    {
-        require(_targetProxyHash.length != 20, "Invalid targetProxyHash");
-
-        address assetHash = msg.sender;
-        _markAssetAsRegistered(assetHash, _targetProxyHash, _toAssetHash);
-
-        RegisterAssetTxArgs memory txArgs = RegisterAssetTxArgs({
-            assetHash: Utils.addressToBytes(assetHash),
-            nativeAssetHash: _toAssetHash
-        });
-
-        bytes memory txData = _serializeRegisterAssetTxArgs(txArgs);
-
-        Ccm ccm = _getCcm();
-        require(
-            ccm.crossChain(counterpartChainId, _targetProxyHash, "registerAsset", txData),
-            "EthCrossChainManager crossChain executed error"
-        );
-
-        return true;
-    }
-
     // _values[0]: amount
     // _values[1]: feeAmount
     // _values[2]: nonce
@@ -305,9 +280,9 @@ contract LockProxy is ReentrancyGuard {
         bytes calldata _fromContractAddr,
         uint64 _fromChainId
     )
+        external
         onlyManagerContract
         nonReentrant
-        external
         returns (bool)
     {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
@@ -332,6 +307,7 @@ contract LockProxy is ReentrancyGuard {
         uint256 _amount
     )
         external
+        nonReentrant
         returns (bool)
     {
         require(
@@ -340,7 +316,8 @@ contract LockProxy is ReentrancyGuard {
         );
 
         if (_assetHash == ETH_ASSET_HASH) {
-            address(uint160(_receivingAddress)).transfer(_amount);
+            (bool success,  ) = _receivingAddress.call{value: _amount}("");
+            require(success, "Transfer failed");
             return true;
         }
 
@@ -425,7 +402,7 @@ contract LockProxy is ReentrancyGuard {
         });
 
         bytes memory txData = _serializeTxArgs(txArgs);
-        Ccm ccm = _getCcm();
+        CCM ccm = _getCcm();
         require(
             ccm.crossChain(counterpartChainId, _targetProxyHash, "unlock", txData),
             "EthCrossChainManager crossChain executed error!"
@@ -521,7 +498,8 @@ contract LockProxy is ReentrancyGuard {
         private
     {
         if (_assetHash == ETH_ASSET_HASH) {
-            address(uint160(_toAddress)).transfer(_amount);
+            (bool success,  ) = _toAddress.call{value: _amount}("");
+            require(success, "Transfer failed");
             return;
         }
 
@@ -562,7 +540,7 @@ contract LockProxy is ReentrancyGuard {
         );
     }
 
-    function _serializeTxArgs(TxArgs memory args) internal pure returns (bytes memory) {
+    function _serializeTxArgs(TxArgs memory args) private pure returns (bytes memory) {
         bytes memory buff;
         buff = abi.encodePacked(
             ZeroCopySink.WriteVarBytes(args.fromAssetHash),
@@ -577,7 +555,7 @@ contract LockProxy is ReentrancyGuard {
         return buff;
     }
 
-    function _deserializeTxArgs(bytes memory valueBs) internal pure returns (TxArgs memory) {
+    function _deserializeTxArgs(bytes memory valueBs) private pure returns (TxArgs memory) {
         TxArgs memory args;
         uint256 off = 0;
         (args.fromAssetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
@@ -587,16 +565,7 @@ contract LockProxy is ReentrancyGuard {
         return args;
     }
 
-    function _serializeRegisterAssetTxArgs(RegisterAssetTxArgs memory args) internal pure returns (bytes memory) {
-        bytes memory buff;
-        buff = abi.encodePacked(
-            ZeroCopySink.WriteVarBytes(args.assetHash),
-            ZeroCopySink.WriteVarBytes(args.nativeAssetHash)
-        );
-        return buff;
-    }
-
-    function _deserializeRegisterAssetTxArgs(bytes memory valueBs) internal pure returns (RegisterAssetTxArgs memory) {
+    function _deserializeRegisterAssetTxArgs(bytes memory valueBs) private pure returns (RegisterAssetTxArgs memory) {
         RegisterAssetTxArgs memory args;
         uint256 off = 0;
         (args.assetHash, off) = ZeroCopySource.NextVarBytes(valueBs, off);
@@ -604,15 +573,15 @@ contract LockProxy is ReentrancyGuard {
         return args;
     }
 
-    function _deserializeExtensionTxArgs(bytes memory valueBs) internal pure returns (ExtensionTxArgs memory) {
+    function _deserializeExtensionTxArgs(bytes memory valueBs) private pure returns (ExtensionTxArgs memory) {
         ExtensionTxArgs memory args;
         uint256 off = 0;
         (args.extensionAddress, off) = ZeroCopySource.NextVarBytes(valueBs, off);
         return args;
     }
 
-    function _getCcm() internal view returns (Ccm) {
-      Ccm ccm = Ccm(ccmProxy.getEthCrossChainManager());
+    function _getCcm() private view returns (CCM) {
+      CCM ccm = CCM(ccmProxy.getEthCrossChainManager());
       return ccm;
     }
 

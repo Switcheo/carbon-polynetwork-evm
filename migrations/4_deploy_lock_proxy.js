@@ -1,7 +1,22 @@
+const CCMMock = artifacts.require('CCMMock')
+const CCMProxyMock = artifacts.require('CCMProxyMock')
 const LockProxy = artifacts.require('LockProxy')
+const { LOCAL_COUNTERPART_CHAIN_ID } = require('../test/constants')
 
-module.exports = function(deployer) {
-    const ccmProxyAddress = '0x838bf9e95cb12dd76a54c9f9d2e3082eaf928270'
-    const counterpartChainId = 173
-    deployer.deploy(LockProxy, ccmProxyAddress, counterpartChainId)
+module.exports = function(deployer, network) {
+    deployer.then(async () => {
+        let counterpartChainId = 191
+        let ccmProxyAddress = '0x7087E66D6874899A331b926C261fa5059328d95F'
+
+        if (network === 'development') {
+            await deployer.deploy(CCMMock)
+            const ccm = await CCMMock.deployed()
+            await deployer.deploy(CCMProxyMock, ccm.address)
+            const ccmProxy = await CCMProxyMock.deployed()
+            ccmProxyAddress = ccmProxy.address
+            counterpartChainId = LOCAL_COUNTERPART_CHAIN_ID
+        }
+
+        await deployer.deploy(LockProxy, ccmProxyAddress, counterpartChainId)
+    })
 }
