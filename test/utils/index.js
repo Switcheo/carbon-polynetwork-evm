@@ -11,6 +11,7 @@ const { ETHER_ADDR } = require('../constants')
 
 const abiDecoder = require('abi-decoder')
 abiDecoder.addABI(JRCoin.abi)
+abiDecoder.addABI(LockProxy.abi)
 
 async function getBalanceReader() { return await BalanceReader.deployed() }
 async function getLockProxy() { return await LockProxy.deployed() }
@@ -41,9 +42,12 @@ async function createWallet({ owner, swthAddress }) {
 }
 
 async function lockFromWallet(
-    { walletAddress, assetHash, targetProxyHash, toAssetHash, amount, feeAmount, nonce, signer }
+    { walletAddress, assetHash, targetProxyHash, toAssetHash, feeAddress, amount, feeAmount, nonce, callAmount, signer }
 ) {
-    const feeAddress = '0xaa83739c25970ae1eddaa0b596835e4a9e12d3db'
+    if (callAmount === undefined) {
+        callAmount = amount
+    }
+
     const message = web3.utils.soliditySha3(
         { type: 'string', value: 'sendTokens' },
         { type: 'address', value: assetHash },
@@ -57,13 +61,13 @@ async function lockFromWallet(
     const { v, r, s } = await signMessage(message, signer)
 
     const proxy = await getLockProxy()
-    await proxy.lockFromWallet(
+    return await proxy.lockFromWallet(
         walletAddress,
         assetHash,
         targetProxyHash,
         toAssetHash,
         feeAddress,
-        [amount, feeAmount, nonce, amount],
+        [amount, feeAmount, nonce, callAmount],
         v,
         [r, s]
     )
@@ -171,14 +175,6 @@ function assertEvents(result, logsB, { start, end } = {}) {
     }
 }
 
-async function assertBalance(user, token, amount) {
-    if (token === ETHER_ADDR) {
-        await assertAsync(web3.eth.getBalance(user), amount)
-        return
-    }
-    await assertAsync(token.balanceOf(user), amount)
-}
-
 function parseSignature(signature) {
     const sig = signature.slice(2)
     const v = web3.utils.hexToNumber('0x' + sig.slice(128, 130)) + 27
@@ -207,7 +203,7 @@ module.exports = {
     assertAsync,
     assertReversion,
     assertEvents,
-    assertBalance,
     parseSignature,
-    signMessage
+    signMessage,
+    parseLogs
 }

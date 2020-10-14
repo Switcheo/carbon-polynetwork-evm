@@ -11,7 +11,7 @@ interface ERC20 {
 contract BalanceReader {
     using SafeMath for uint256;
 
-    address private constant ETHER_ADDR = address(0);
+    address private constant ETH_ASSET_HASH = address(0);
 
     function getBalances(
         address _user,
@@ -24,7 +24,7 @@ contract BalanceReader {
         uint256[] memory balances = new uint256[](_assetIds.length);
 
         for (uint256 i = 0; i < _assetIds.length; i++) {
-            if (_assetIds[i] == ETHER_ADDR) {
+            if (_assetIds[i] == ETH_ASSET_HASH) {
                 balances[i] = _user.balance;
                 continue;
             }

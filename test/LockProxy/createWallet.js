@@ -3,7 +3,7 @@ const { getWalletAddress, getLockProxy, assertAsync, assertReversion, getWalletB
 
 contract('Test createWallet', async (accounts) => {
     const owner = '0xE28338b00b8bdcaB93623F99C5De2F2b33b740a9'
-    const swthAddress = 'swth142ph88p9ju9wrmw65z6edq67f20p957m92ck9d'
+    const swthAddress = '0x213a5f9f0477b2cfc3a65120971a027e10f9a7ab'
     let proxy
 
     beforeEach(async () => {

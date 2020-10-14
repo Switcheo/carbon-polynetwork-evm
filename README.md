@@ -44,7 +44,7 @@ This would require the user to have ETH in their address and to call the functio
 For the user's convenience, an alternative deposit flow that does not require the user to have ETH is provided.
 To use this flow, the `LockProxy.getWalletAddress` function can be called to get a fixed deposit address based on an Ethereum address controllable by the user and a Switcheo TradeHub address.
 
-The user can then send ETH or any supported Ethereum tokens to the deposit address. Any Ethereum token that supports the ERC20 `transfer` function should be supported.
+The user can then send ETH or any supported Ethereum tokens to the deposit address. Any Ethereum token that implements the ERC20 `balanceOf` and `transfer` functions should be supported.
 
 After the tokens are in the deposit address, any Ethereum address can call `LockProxy.createWallet` to create a `Wallet` contract at the deposit address.
 

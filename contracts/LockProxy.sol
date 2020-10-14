@@ -6,6 +6,7 @@ import "./libs/common/ZeroCopySource.sol";
 import "./libs/common/ZeroCopySink.sol";
 import "./libs/utils/ReentrancyGuard.sol";
 import "./libs/utils/Utils.sol";
+import "./libs/math/SafeMath.sol";
 
 import "./Wallet.sol";
 
@@ -22,6 +23,8 @@ interface CCMProxy {
 /// @notice This contract faciliates deposits and withdrawals to Switcheo TradeHub.
 /// @dev The contract also allows for additional features in the future through "extension" contracts.
 contract LockProxy is ReentrancyGuard {
+    using SafeMath for uint256;
+
     struct ExtensionTxArgs {
         bytes extensionAddress;
     }
@@ -242,8 +245,7 @@ contract LockProxy is ReentrancyGuard {
 
     // _values[0]: amount
     // _values[1]: feeAmount
-    // _values[2]: nonce
-    // _values[3]: callAmount
+    // _values[2]: callAmount
     function lock(
         address _assetHash,
         bytes calldata _targetProxyHash,
@@ -258,7 +260,7 @@ contract LockProxy is ReentrancyGuard {
         returns (bool)
     {
 
-        _transferIn(_assetHash, _values[0], _values[3]);
+        _transferIn(_assetHash, _values[0], _values[2]);
 
         _lock(
             _assetHash,
@@ -382,11 +384,11 @@ contract LockProxy is ReentrancyGuard {
     )
         private
     {
-        require(_targetProxyHash.length == 20, "invalid targetProxyHash");
-        require(_toAssetHash.length > 0, "empty toAssetHash");
-        require(_toAddress.length > 0, "empty toAddress");
-        require(_amount > 0, "amount must be more than zero!");
-        require(_feeAmount < _amount, "fee amount cannot be greater than amount");
+        require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
+        require(_toAssetHash.length > 0, "Empty toAssetHash");
+        require(_toAddress.length > 0, "Empty toAddress");
+        require(_amount > 0, "Amount must be more than zero");
+        require(_feeAmount < _amount, "Fee amount cannot be greater than amount");
 
         _validateAssetRegistration(_fromAssetHash, _targetProxyHash, _toAssetHash);
 
@@ -452,14 +454,17 @@ contract LockProxy is ReentrancyGuard {
     {
         Wallet wallet = Wallet(_walletAddress);
         if (_assetHash == ETH_ASSET_HASH) {
-            wallet.sendETHToCreator(_amount);
+            uint256 initialBalance = address(this).balance;
+            wallet.sendETHToCreator(_callAmount);
+            uint256 transferredAmount = address(this).balance.sub(initialBalance);
+            require(transferredAmount == _amount, "ETH transferred does not match the expected amount");
             return;
         }
 
         ERC20 token = ERC20(_assetHash);
         uint256 initialBalance = token.balanceOf(address(this));
         wallet.sendERC20ToCreator(_assetHash, _callAmount);
-        uint256 transferredAmount = initialBalance - token.balanceOf(address(this));
+        uint256 transferredAmount = token.balanceOf(address(this)).sub(initialBalance);
         require(transferredAmount == _amount, "Tokens transferred does not match the expected amount");
     }
 
@@ -471,7 +476,7 @@ contract LockProxy is ReentrancyGuard {
         private
     {
         if (_assetHash == ETH_ASSET_HASH) {
-            require(msg.value == _amount, "Transferred ether does not equal amount");
+            require(msg.value == _amount, "ETH transferred does not match the expected amount");
             return;
         }
 
@@ -486,7 +491,7 @@ contract LockProxy is ReentrancyGuard {
                 _callAmount
             )
         );
-        uint256 transferredAmount = initialBalance - token.balanceOf(address(this));
+        uint256 transferredAmount = token.balanceOf(address(this)).sub(initialBalance);
         require(transferredAmount == _amount, "Tokens transferred does not match the expected amount");
     }
 
@@ -586,7 +591,7 @@ contract LockProxy is ReentrancyGuard {
     }
 
     function _getNextNonce() private returns (uint256) {
-      currentNonce++;
+      currentNonce = currentNonce.add(1);
       return currentNonce;
     }
 
