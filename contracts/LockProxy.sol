@@ -357,14 +357,14 @@ contract LockProxy is ReentrancyGuard {
         require(_fromChainId == counterpartChainId, "Invalid chain ID");
 
         TransferTxArgs memory args = _deserializeTransferTxArgs(_argsBz);
-        require(args.fromAssetHash.length == 20, "Invalid fromAssetHash");
+        require(args.fromAssetHash.length > 0, "Invalid fromAssetHash");
         require(args.toAssetHash.length == 20, "Invalid toAssetHash");
 
         address toAssetHash = Utils.bytesToAddress(args.toAssetHash);
         address toAddress = Utils.bytesToAddress(args.toAddress);
 
         _validateAssetRegistration(toAssetHash, _fromContractAddr, args.fromAssetHash);
-        _transferOut(toAssetHash, toAddress, args.amount);
+        _transferOut(toAddress, toAssetHash, args.amount);
 
         emit UnlockEvent(toAssetHash, toAddress, args.amount, _argsBz);
         return true;

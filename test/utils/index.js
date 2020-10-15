@@ -7,8 +7,6 @@ const JRCoin = artifacts.require('JRCoin')
 const Web3 = require('web3')
 const web3 = new Web3(Web3.givenProvider)
 
-const { ETHER_ADDR } = require('../constants')
-
 const abiDecoder = require('abi-decoder')
 abiDecoder.addABI(JRCoin.abi)
 abiDecoder.addABI(LockProxy.abi)
