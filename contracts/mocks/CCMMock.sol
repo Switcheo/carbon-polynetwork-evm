@@ -6,11 +6,17 @@ import "../libs/common/ZeroCopySink.sol";
 import "../libs/utils/Utils.sol";
 
 interface ILockProxy {
+    function addExtension(bytes calldata _argsBs, bytes calldata _fromContractAddr, uint64 _fromChainId) external returns (bool);
+    function removeExtension(bytes calldata _argsBs, bytes calldata _fromContractAddr, uint64 _fromChainId) external returns (bool);
     function registerAsset(bytes calldata _argsBs, bytes calldata _fromContractAddr, uint64 _fromChainId) external returns (bool);
     function unlock(bytes calldata _argsBs, bytes calldata _fromContractAddr, uint64 _fromChainId) external returns (bool);
 }
 
 contract CCMMock {
+    struct ExtensionTxArgs {
+        bytes extensionAddress;
+    }
+
     struct RegisterAssetTxArgs {
         bytes assetHash;
         bytes nativeAssetHash;
@@ -47,6 +53,36 @@ contract CCMMock {
         return true;
     }
 
+    function addExtension(
+        address _lockProxyAddr,
+        address _extension,
+        uint64 _chainId
+    )
+        external
+    {
+        ExtensionTxArgs memory txArgs = ExtensionTxArgs({
+            extensionAddress: Utils.addressToBytes(_extension)
+        });
+
+        bytes memory argsBz = _serializeExtensionTxArgs(txArgs);
+        ILockProxy(_lockProxyAddr).addExtension(argsBz, "", _chainId);
+    }
+
+    function removeExtension(
+        address _lockProxyAddr,
+        address _extension,
+        uint64 _chainId
+    )
+        external
+    {
+        ExtensionTxArgs memory txArgs = ExtensionTxArgs({
+            extensionAddress: Utils.addressToBytes(_extension)
+        });
+
+        bytes memory argsBz = _serializeExtensionTxArgs(txArgs);
+        ILockProxy(_lockProxyAddr).removeExtension(argsBz, "", _chainId);
+    }
+
     function registerAsset(
         address _lockProxyAddr,
         address _assetHash,
@@ -61,8 +97,8 @@ contract CCMMock {
             nativeAssetHash: Utils.addressToBytes(_assetHash)
         });
 
-        bytes memory argsBs = _serializeRegisterAssetTxArgs(txArgs);
-        ILockProxy(_lockProxyAddr).registerAsset(argsBs, _fromProxyHash, _chainId);
+        bytes memory argsBz = _serializeRegisterAssetTxArgs(txArgs);
+        ILockProxy(_lockProxyAddr).registerAsset(argsBz, _fromProxyHash, _chainId);
     }
 
     function unlock(
@@ -87,8 +123,16 @@ contract CCMMock {
             nonce: 1
         });
 
-        bytes memory argsBs = _serializeTxArgs(txArgs);
-        ILockProxy(_lockProxyAddr).unlock(argsBs, _fromProxyHash, _chainId);
+        bytes memory argsBz = _serializeTxArgs(txArgs);
+        ILockProxy(_lockProxyAddr).unlock(argsBz, _fromProxyHash, _chainId);
+    }
+
+    function _serializeExtensionTxArgs(ExtensionTxArgs memory args) private pure returns (bytes memory) {
+        bytes memory buff;
+        buff = abi.encodePacked(
+            ZeroCopySink.WriteVarBytes(args.extensionAddress)
+        );
+        return buff;
     }
 
     function _serializeRegisterAssetTxArgs(RegisterAssetTxArgs memory args) private pure returns (bytes memory) {

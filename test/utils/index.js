@@ -1,3 +1,4 @@
+const ERC20 = artifacts.require('ERC20')
 const BalanceReader = artifacts.require('BalanceReader')
 const LockProxy = artifacts.require('LockProxy')
 const CCMMock = artifacts.require('CCMMock')
@@ -8,6 +9,7 @@ const Web3 = require('web3')
 const web3 = new Web3(Web3.givenProvider)
 
 const abiDecoder = require('abi-decoder')
+abiDecoder.addABI(ERC20.abi)
 abiDecoder.addABI(JRCoin.abi)
 abiDecoder.addABI(LockProxy.abi)
 
