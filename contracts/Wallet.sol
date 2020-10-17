@@ -18,9 +18,9 @@ contract Wallet {
     bool public isInitialized;
     address public creator;
     address public owner;
-    string public swthAddress;
+    bytes public swthAddress;
 
-    function initialize(address _owner, string calldata _swthAddress) external {
+    function initialize(address _owner, bytes calldata _swthAddress) external {
         require(isInitialized == false, "Contract already initialized");
         isInitialized = true;
         creator = msg.sender;

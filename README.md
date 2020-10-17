@@ -76,4 +76,4 @@ Extensions can be removed by the `removeExtension` method, also callable through
 
 ## Addresses
 
-Devnet LockProxy (Ropsten): 0xbc51Ebf652ff116902614879920087042e9E546b
+Devnet LockProxy (Ropsten): 0x7404752ac021940d0c85a25ce2e3aadce9325292

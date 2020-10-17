@@ -116,7 +116,7 @@ contract LockProxy is ReentrancyGuard {
     /// @return the wallet address
     function getWalletAddress(
         address _ownerAddress,
-        string calldata _swthAddress,
+        bytes calldata _swthAddress,
         bytes32 _bytecodeHash
     )
         external
@@ -141,14 +141,14 @@ contract LockProxy is ReentrancyGuard {
     /// @return true if success
     function createWallet(
         address _ownerAddress,
-        string calldata _swthAddress
+        bytes calldata _swthAddress
     )
         external
         nonReentrant
         returns (bool)
     {
         require(_ownerAddress != address(0), "Empty ownerAddress");
-        require(bytes(_swthAddress).length != 0, "Empty swthAddress");
+        require(_swthAddress.length != 0, "Empty swthAddress");
 
         bytes32 salt = _getSalt(
             _ownerAddress,
@@ -287,7 +287,7 @@ contract LockProxy is ReentrancyGuard {
             _assetHash,
             _targetProxyHash,
             _toAssetHash,
-            bytes(wallet.swthAddress()),
+            wallet.swthAddress(),
             _values[0],
             _values[1],
             _feeAddress
@@ -693,7 +693,7 @@ contract LockProxy is ReentrancyGuard {
 
     function _getSalt(
         address _ownerAddress,
-        string memory _swthAddress
+        bytes memory _swthAddress
     )
         private
         pure

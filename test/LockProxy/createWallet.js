@@ -38,13 +38,4 @@ contract('Test createWallet', async (accounts) => {
             await assertReversion(Wallet.at(expectedAddress), 'Cannot create instance of Wallet; no code at address')
         })
     })
-
-    contract('when the swthAddress is empty', async () => {
-        it('raises an error', async () => {
-            const expectedAddress = await getWalletAddress(owner, '')
-            await assertReversion(Wallet.at(expectedAddress), 'Cannot create instance of Wallet; no code at address')
-            await assertReversion(proxy.createWallet(owner, ''), 'Empty swthAddress')
-            await assertReversion(Wallet.at(expectedAddress), 'Cannot create instance of Wallet; no code at address')
-        })
-    })
 })
