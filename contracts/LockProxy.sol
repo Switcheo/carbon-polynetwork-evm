@@ -25,18 +25,18 @@ interface CCMProxy {
 contract LockProxy is ReentrancyGuard {
     using SafeMath for uint256;
 
-    // used for the cross-chain addExtension and removeExtension methods
+    // used for cross-chain addExtension and removeExtension methods
     struct ExtensionTxArgs {
         bytes extensionAddress;
     }
 
-    // used for the cross-chain registerAsset method
+    // used for cross-chain registerAsset method
     struct RegisterAssetTxArgs {
         bytes assetHash;
         bytes nativeAssetHash;
     }
 
-    // used for the cross-chain lock and unlock methods
+    // used for cross-chain lock and unlock methods
     struct TransferTxArgs {
         bytes fromAssetHash;
         bytes toAssetHash;
@@ -237,7 +237,9 @@ contract LockProxy is ReentrancyGuard {
     }
 
     /// @dev Performs a deposit from a Wallet contract
-    /// @param _walletAddress address of the wallet contract
+    /// @param _walletAddress address of the wallet contract, the wallet contract
+    /// does not receive ETH in this call, but _walletAddress still needs to be payable
+    /// since the wallet contract can receive ETH, there would be compile errors otherwise
     /// @param _assetHash the asset to deposit
     /// @param _targetProxyHash the associated proxy hash on Switcheo TradeHub
     /// @param _toAssetHash the associated asset hash on Switcheo TradeHub
