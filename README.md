@@ -1,6 +1,6 @@
-# Switcheo Chain Ethereum Contract
+# Switcheo TradeHub Ethereum Deposit Contract
 
-This is the repo for the Switcheo Chain ETH contracts.
+This is the repository contains the Ethereum deposit contracts for Switcheo TradeHub.
 
 ## Setup
 
