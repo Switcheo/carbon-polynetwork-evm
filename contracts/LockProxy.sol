@@ -477,7 +477,7 @@ contract LockProxy is ReentrancyGuard {
         require(_toAssetHash.length > 0, "Empty toAssetHash");
         require(_toAddress.length > 0, "Empty toAddress");
         require(amount > 0, "Amount must be more than zero");
-        require(feeAmount < amount, "Fee amount cannot be greater than amount");
+        require(feeAmount < amount, "Fee amount must be less than amount");
 
         _validateAssetRegistration(_fromAssetHash, _targetProxyHash, _toAssetHash);
 
