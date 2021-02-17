@@ -41,10 +41,10 @@ contract LockProxy is ReentrancyGuard {
         bytes fromAssetHash;
         bytes toAssetHash;
         bytes toAddress;
+        bytes fromAddress;
         uint256 amount;
         uint256 feeAmount;
         bytes feeAddress;
-        bytes fromAddress;
         uint256 nonce;
     }
 
@@ -289,9 +289,9 @@ contract LockProxy is ReentrancyGuard {
             _assetHash,
             _targetProxyHash,
             _toAssetHash,
+            wallet.owner(),
             wallet.swthAddress(),
-            _values[0],
-            _values[1],
+            _values,
             _feeAddress
         );
 
@@ -332,9 +332,9 @@ contract LockProxy is ReentrancyGuard {
             _assetHash,
             _targetProxyHash,
             _toAssetHash,
+            msg.sender,
             _toAddress,
-            _values[0],
-            _values[1],
+            _values,
             _feeAddress
         );
 
@@ -464,29 +464,31 @@ contract LockProxy is ReentrancyGuard {
         address _fromAssetHash,
         bytes memory _targetProxyHash,
         bytes memory _toAssetHash,
+        address _fromAddress,
         bytes memory _toAddress,
-        uint256 _amount,
-        uint256 _feeAmount,
+        uint256[] memory _amounts, // 0: amount, 1: feeAmount (avoid StackTooDeep error)
         bytes memory _feeAddress
     )
         private
     {
+        uint256 amount = _amounts[0];
+        uint256 feeAmount = _amounts[1];
         require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
         require(_toAssetHash.length > 0, "Empty toAssetHash");
         require(_toAddress.length > 0, "Empty toAddress");
-        require(_amount > 0, "Amount must be more than zero");
-        require(_feeAmount < _amount, "Fee amount cannot be greater than amount");
+        require(amount > 0, "Amount must be more than zero");
+        require(feeAmount < amount, "Fee amount cannot be greater than amount");
 
         _validateAssetRegistration(_fromAssetHash, _targetProxyHash, _toAssetHash);
 
         TransferTxArgs memory txArgs = TransferTxArgs({
             fromAssetHash: Utils.addressToBytes(_fromAssetHash),
             toAssetHash: _toAssetHash,
+            fromAddress: abi.encodePacked(_fromAddress),
             toAddress: _toAddress,
-            amount: _amount,
-            feeAmount: _feeAmount,
+            amount: amount,
+            feeAmount: feeAmount,
             feeAddress: _feeAddress,
-            fromAddress: abi.encodePacked(msg.sender),
             nonce: _getNextNonce()
         });
 
@@ -497,7 +499,7 @@ contract LockProxy is ReentrancyGuard {
             "EthCrossChainManager crossChain executed error!"
         );
 
-        emit LockEvent(_fromAssetHash, msg.sender, counterpartChainId, _toAssetHash, _toAddress, txData);
+        emit LockEvent(_fromAssetHash, _fromAddress, counterpartChainId, _toAssetHash, _toAddress, txData);
     }
 
     /// @dev validate the signature for lockFromWallet
