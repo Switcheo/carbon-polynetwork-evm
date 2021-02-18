@@ -41,16 +41,16 @@ contract LockProxy is ReentrancyGuard {
         bytes fromAssetHash;
         bytes toAssetHash;
         bytes toAddress;
+        bytes fromAddress;
         uint256 amount;
         uint256 feeAmount;
         bytes feeAddress;
-        bytes fromAddress;
         uint256 nonce;
     }
 
     // used to create a unique salt for wallet creation
     bytes public constant SALT_PREFIX = "switcheo-eth-wallet-factory-v1";
-    address public constant ETH_ASSET_HASH = address(0);
+    address public constant ETH_ADDRESS = address(0);
 
     CCMProxy public ccmProxy;
     uint64 public counterpartChainId;
@@ -70,17 +70,17 @@ contract LockProxy is ReentrancyGuard {
     mapping(address => bool) public wallets;
 
     event LockEvent(
-        address fromAssetHash,
-        address fromAddress,
-        uint64 toChainId,
+        address indexed tokenAddress,
+        address indexed fromAddress,
+        uint64 indexed toChainId,
         bytes toAssetHash,
         bytes toAddress,
         bytes txArgs
     );
 
     event UnlockEvent(
-        address toAssetHash,
-        address toAddress,
+        address indexed tokenAddress,
+        address indexed toAddress,
         uint256 amount,
         bytes txArgs
     );
@@ -240,7 +240,7 @@ contract LockProxy is ReentrancyGuard {
     /// @param _walletAddress address of the wallet contract, the wallet contract
     /// does not receive ETH in this call, but _walletAddress still needs to be payable
     /// since the wallet contract can receive ETH, there would be compile errors otherwise
-    /// @param _assetHash the asset to deposit
+    /// @param _tokenAddress address of the asset to deposit
     /// @param _targetProxyHash the associated proxy hash on Switcheo TradeHub
     /// @param _toAssetHash the associated asset hash on Switcheo TradeHub
     /// @param _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
@@ -253,7 +253,7 @@ contract LockProxy is ReentrancyGuard {
     /// @param _rs: the r, s values of the wallet owner's signature
     function lockFromWallet(
         address payable _walletAddress,
-        address _assetHash,
+        address _tokenAddress,
         bytes calldata _targetProxyHash,
         bytes calldata _toAssetHash,
         bytes calldata _feeAddress,
@@ -270,7 +270,7 @@ contract LockProxy is ReentrancyGuard {
         Wallet wallet = Wallet(_walletAddress);
         _validateLockFromWallet(
             wallet.owner(),
-            _assetHash,
+            _tokenAddress,
             _targetProxyHash,
             _toAssetHash,
             _feeAddress,
@@ -283,15 +283,15 @@ contract LockProxy is ReentrancyGuard {
         // since, once this line is passed, the deposit is assumed to be successful
         // which will eventually result in the specified amount of tokens being minted for the
         // wallet.swthAddress on Switcheo TradeHub
-        _transferInFromWallet(_walletAddress, _assetHash, _values[0], _values[3]);
+        _transferInFromWallet(_walletAddress, _tokenAddress, _values[0], _values[3]);
 
         _lock(
-            _assetHash,
+            _tokenAddress,
             _targetProxyHash,
             _toAssetHash,
+            wallet.owner(),
             wallet.swthAddress(),
-            _values[0],
-            _values[1],
+            _values,
             _feeAddress
         );
 
@@ -299,7 +299,7 @@ contract LockProxy is ReentrancyGuard {
     }
 
     /// @dev Performs a deposit
-    /// @param _assetHash the asset to deposit
+    /// @param _tokenAddress the address of the token to deposit
     /// @param _targetProxyHash the associated proxy hash on Switcheo TradeHub
     /// @param _toAddress the hex version of the Switcheo TradeHub address to deposit to
     /// @param _toAssetHash the associated asset hash on Switcheo TradeHub
@@ -309,7 +309,7 @@ contract LockProxy is ReentrancyGuard {
     /// @param _values[2]: callAmount, some tokens may burn an amount before transfer
     /// so we allow a callAmount to support these tokens
     function lock(
-        address _assetHash,
+        address _tokenAddress,
         bytes calldata _targetProxyHash,
         bytes calldata _toAddress,
         bytes calldata _toAssetHash,
@@ -326,15 +326,15 @@ contract LockProxy is ReentrancyGuard {
         // since, once this line is passed, the deposit is assumed to be successful
         // which will eventually result in the specified amount of tokens being minted for the
         // _toAddress on Switcheo TradeHub
-        _transferIn(_assetHash, _values[0], _values[2]);
+        _transferIn(_tokenAddress, _values[0], _values[2]);
 
         _lock(
-            _assetHash,
+            _tokenAddress,
             _targetProxyHash,
             _toAssetHash,
+            msg.sender,
             _toAddress,
-            _values[0],
-            _values[1],
+            _values,
             _feeAddress
         );
 
@@ -362,13 +362,13 @@ contract LockProxy is ReentrancyGuard {
         require(args.fromAssetHash.length > 0, "Invalid fromAssetHash");
         require(args.toAssetHash.length == 20, "Invalid toAssetHash");
 
-        address toAssetHash = Utils.bytesToAddress(args.toAssetHash);
+        address tokenAddress = Utils.bytesToAddress(args.toAssetHash);
         address toAddress = Utils.bytesToAddress(args.toAddress);
 
-        _validateAssetRegistration(toAssetHash, _fromContractAddr, args.fromAssetHash);
-        _transferOut(toAddress, toAssetHash, args.amount);
+        _validateAssetRegistration(tokenAddress, _fromContractAddr, args.fromAssetHash);
+        _transferOut(toAddress, tokenAddress, args.amount);
 
-        emit UnlockEvent(toAssetHash, toAddress, args.amount, _argsBz);
+        emit UnlockEvent(tokenAddress, toAddress, args.amount, _argsBz);
         return true;
     }
 
@@ -376,12 +376,12 @@ contract LockProxy is ReentrancyGuard {
     /// the `nonReentrant` guard is intentionally not added to this function, to allow for more flexibility.
     /// The calling contract should be secure and have its own `nonReentrant` guard as needed.
     /// @param _receivingAddress the address to transfer to
-    /// @param _assetHash the asset to transfer
+    /// @param _tokenAddress the address of the asset to transfer
     /// @param _amount the amount to transfer
     /// @return true if success
     function extensionTransfer(
         address _receivingAddress,
-        address _assetHash,
+        address _tokenAddress,
         uint256 _amount
     )
         external
@@ -392,7 +392,7 @@ contract LockProxy is ReentrancyGuard {
             "Invalid extension"
         );
 
-        if (_assetHash == ETH_ASSET_HASH) {
+        if (_tokenAddress == ETH_ADDRESS) {
             // we use `call` here since the _receivingAddress could be a contract
             // see https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/
             // for more info
@@ -401,7 +401,23 @@ contract LockProxy is ReentrancyGuard {
             return true;
         }
 
-        ERC20 token = ERC20(_assetHash);
+        IERC20 token = IERC20(_tokenAddress);
+
+        // Fixes possible issue when current allowance is not zero.
+        // For more info see issue 3.2 in:
+        // https://github.com/Switcheo/switcheo-tradehub-eth/blob/master/audits/PeckShield-Audit-Report-Switcheo-v1.0-rc.pdf
+        uint256 allowance = token.allowance(address(this), _receivingAddress);
+        if (allowance > 0) {
+          _callOptionalReturn(
+              token,
+              abi.encodeWithSelector(
+                  token.approve.selector,
+                  _receivingAddress,
+                  0
+              )
+          );
+        }
+
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(
@@ -415,11 +431,11 @@ contract LockProxy is ReentrancyGuard {
     }
 
     /// @dev Marks an asset as registered by associating it to a specified Switcheo TradeHub proxy and asset hash
-    /// @param _assetHash the address of the asset to mark
+    /// @param _tokenAddress the address of the asset to mark
     /// @param _proxyAddress the associated proxy address on Switcheo TradeHub
     /// @param _toAssetHash the associated asset hash on Switcheo TradeHub
     function _markAssetAsRegistered(
-        address _assetHash,
+        address _tokenAddress,
         bytes memory _proxyAddress,
         bytes memory _toAssetHash
     )
@@ -427,7 +443,7 @@ contract LockProxy is ReentrancyGuard {
     {
         require(_proxyAddress.length == 20, "Invalid proxyAddress");
         require(
-            registry[_assetHash] == bytes32(0),
+            registry[_tokenAddress] == bytes32(0),
             "Asset already registered"
         );
 
@@ -436,15 +452,15 @@ contract LockProxy is ReentrancyGuard {
             _toAssetHash
         ));
 
-        registry[_assetHash] = value;
+        registry[_tokenAddress] = value;
     }
 
     /// @dev Validates that an asset's registration matches the given params
-    /// @param _assetHash the address of the asset to check
+    /// @param _tokenAddress the address of the asset to check
     /// @param _proxyAddress the expected proxy address on Switcheo TradeHub
     /// @param _toAssetHash the expected asset hash on Switcheo TradeHub
     function _validateAssetRegistration(
-        address _assetHash,
+        address _tokenAddress,
         bytes memory _proxyAddress,
         bytes memory _toAssetHash
     )
@@ -456,37 +472,39 @@ contract LockProxy is ReentrancyGuard {
             _proxyAddress,
             _toAssetHash
         ));
-        require(registry[_assetHash] == value, "Asset not registered");
+        require(registry[_tokenAddress] == value, "Asset not registered");
     }
 
     /// @dev validates the asset registration and calls the CCM contract
     function _lock(
-        address _fromAssetHash,
+        address _tokenAddress,
         bytes memory _targetProxyHash,
         bytes memory _toAssetHash,
+        address _fromAddress,
         bytes memory _toAddress,
-        uint256 _amount,
-        uint256 _feeAmount,
+        uint256[] memory _amounts, // 0: amount, 1: feeAmount (avoid StackTooDeep error)
         bytes memory _feeAddress
     )
         private
     {
+        uint256 amount = _amounts[0];
+        uint256 feeAmount = _amounts[1];
         require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
         require(_toAssetHash.length > 0, "Empty toAssetHash");
         require(_toAddress.length > 0, "Empty toAddress");
-        require(_amount > 0, "Amount must be more than zero");
-        require(_feeAmount < _amount, "Fee amount cannot be greater than amount");
+        require(amount > 0, "Amount must be more than zero");
+        require(feeAmount < amount, "Fee amount must be less than amount");
 
-        _validateAssetRegistration(_fromAssetHash, _targetProxyHash, _toAssetHash);
+        _validateAssetRegistration(_tokenAddress, _targetProxyHash, _toAssetHash);
 
         TransferTxArgs memory txArgs = TransferTxArgs({
-            fromAssetHash: Utils.addressToBytes(_fromAssetHash),
+            fromAssetHash: Utils.addressToBytes(_tokenAddress),
             toAssetHash: _toAssetHash,
+            fromAddress: abi.encodePacked(_fromAddress),
             toAddress: _toAddress,
-            amount: _amount,
-            feeAmount: _feeAmount,
+            amount: amount,
+            feeAmount: feeAmount,
             feeAddress: _feeAddress,
-            fromAddress: abi.encodePacked(msg.sender),
             nonce: _getNextNonce()
         });
 
@@ -497,13 +515,13 @@ contract LockProxy is ReentrancyGuard {
             "EthCrossChainManager crossChain executed error!"
         );
 
-        emit LockEvent(_fromAssetHash, msg.sender, counterpartChainId, _toAssetHash, _toAddress, txData);
+        emit LockEvent(_tokenAddress, _fromAddress, counterpartChainId, _toAssetHash, _toAddress, txData);
     }
 
     /// @dev validate the signature for lockFromWallet
     function _validateLockFromWallet(
         address _walletOwner,
-        address _assetHash,
+        address _tokenAddress,
         bytes memory _targetProxyHash,
         bytes memory _toAssetHash,
         bytes memory _feeAddress,
@@ -515,7 +533,7 @@ contract LockProxy is ReentrancyGuard {
     {
         bytes32 message = keccak256(abi.encodePacked(
             "sendTokens",
-            _assetHash,
+            _tokenAddress,
             _targetProxyHash,
             _toAssetHash,
             _feeAddress,
@@ -535,14 +553,14 @@ contract LockProxy is ReentrancyGuard {
     /// of funds were transferred in
     function _transferInFromWallet(
         address payable _walletAddress,
-        address _assetHash,
+        address _tokenAddress,
         uint256 _amount,
         uint256 _callAmount
     )
         private
     {
         Wallet wallet = Wallet(_walletAddress);
-        if (_assetHash == ETH_ASSET_HASH) {
+        if (_tokenAddress == ETH_ADDRESS) {
             uint256 before = address(this).balance;
 
             wallet.sendETHToCreator(_callAmount);
@@ -552,10 +570,10 @@ contract LockProxy is ReentrancyGuard {
             return;
         }
 
-        ERC20 token = ERC20(_assetHash);
+        IERC20 token = IERC20(_tokenAddress);
         uint256 before = token.balanceOf(address(this));
 
-        wallet.sendERC20ToCreator(_assetHash, _callAmount);
+        wallet.sendERC20ToCreator(_tokenAddress, _callAmount);
 
         uint256 transferred = token.balanceOf(address(this)).sub(before);
         require(transferred == _amount, "Tokens transferred does not match the expected amount");
@@ -567,18 +585,18 @@ contract LockProxy is ReentrancyGuard {
     /// these checks are assumed to be sufficient in ensuring that the expected amount
     /// of funds were transferred in
     function _transferIn(
-        address _assetHash,
+        address _tokenAddress,
         uint256 _amount,
         uint256 _callAmount
     )
         private
     {
-        if (_assetHash == ETH_ASSET_HASH) {
+        if (_tokenAddress == ETH_ADDRESS) {
             require(msg.value == _amount, "ETH transferred does not match the expected amount");
             return;
         }
 
-        ERC20 token = ERC20(_assetHash);
+        IERC20 token = IERC20(_tokenAddress);
         uint256 before = token.balanceOf(address(this));
         _callOptionalReturn(
             token,
@@ -596,12 +614,12 @@ contract LockProxy is ReentrancyGuard {
     /// @dev transfers funds from this contract to the _toAddress
     function _transferOut(
         address _toAddress,
-        address _assetHash,
+        address _tokenAddress,
         uint256 _amount
     )
         private
     {
-        if (_assetHash == ETH_ASSET_HASH) {
+        if (_tokenAddress == ETH_ADDRESS) {
             // we use `call` here since the _receivingAddress could be a contract
             // see https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/
             // for more info
@@ -610,7 +628,7 @@ contract LockProxy is ReentrancyGuard {
             return;
         }
 
-        ERC20 token = ERC20(_assetHash);
+        IERC20 token = IERC20(_tokenAddress);
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(
@@ -636,6 +654,11 @@ contract LockProxy is ReentrancyGuard {
             "\x19Ethereum Signed Message:\n32",
             _message
         ));
+
+        require(
+          _user != address(0),
+          "Invalid signature"
+        );
 
         require(
             _user == ecrecover(prefixedMessage, _v, _r, _s),
@@ -715,7 +738,7 @@ contract LockProxy is ReentrancyGuard {
      * @param token The token targeted by the call.
      * @param data The call data (encoded using abi.encode or one of its variants).
      */
-    function _callOptionalReturn(ERC20 token, bytes memory data) private {
+    function _callOptionalReturn(IERC20 token, bytes memory data) private {
         // We need to perform a low level call here, to bypass Solidity's return data size checking mechanism, since
         // we're implementing it ourselves.
 
@@ -724,7 +747,7 @@ contract LockProxy is ReentrancyGuard {
         //  2. The call itself is made, and success asserted
         //  3. The return value is decoded, which in turn checks the size of the returned data.
         // solhint-disable-next-line max-line-length
-        require(_isContract(address(token)), "SafeERC20: call to non-contract");
+        require(Utils.isContract(address(token)), "SafeERC20: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = address(token).call(data);
@@ -734,33 +757,5 @@ contract LockProxy is ReentrancyGuard {
             // solhint-disable-next-line max-line-length
             require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
         }
-    }
-
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `_isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     */
-    function _isContract(address account) private view returns (bool) {
-        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
-        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
-        // for accounts without code, i.e. `keccak256('')`
-        bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
-        return (codehash != accountHash && codehash != 0x0);
     }
 }

@@ -1,7 +1,7 @@
 const { web3, getJrc, getLockProxy, getCcm, createWallet, assertAsync,
         assertReversion, lockFromWallet } = require('../utils')
 
-const { ETH_ASSET_HASH } = require('../constants')
+const { ETH_ADDRESS } = require('../constants')
 const { LOCAL_COUNTERPART_CHAIN_ID } = require('../constants')
 
 contract('Test lockFromWallet', async (accounts) => {
@@ -28,13 +28,13 @@ contract('Test lockFromWallet', async (accounts) => {
         it('sends eth from the wallet to the LockProxy', async () => {
             const nonce = 1
             const amount = web3.utils.toWei('0.2', 'ether')
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, targetProxyHash, toAssetHash, chainId)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, targetProxyHash, toAssetHash, chainId)
             await wallet.send(amount)
             await assertAsync(web3.eth.getBalance(wallet.address), amount)
 
             await lockFromWallet({
                 walletAddress: wallet.address,
-                assetHash: ETH_ASSET_HASH,
+                assetHash: ETH_ADDRESS,
                 targetProxyHash,
                 toAssetHash,
                 feeAddress,
@@ -78,13 +78,13 @@ contract('Test lockFromWallet', async (accounts) => {
         it('raises an error', async () => {
             const nonce = 1
             const amount = 200
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, targetProxyHash, toAssetHash, chainId)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, targetProxyHash, toAssetHash, chainId)
             await wallet.send(amount)
             await assertAsync(web3.eth.getBalance(wallet.address), amount)
 
             await assertReversion(lockFromWallet({
                 walletAddress: owner,
-                assetHash: ETH_ASSET_HASH,
+                assetHash: ETH_ADDRESS,
                 targetProxyHash,
                 toAssetHash,
                 feeAddress,
@@ -104,13 +104,13 @@ contract('Test lockFromWallet', async (accounts) => {
         it('raises an error', async () => {
             const nonce = 1
             const amount = 200
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, targetProxyHash, toAssetHash, chainId)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, targetProxyHash, toAssetHash, chainId)
             await wallet.send(amount)
             await assertAsync(web3.eth.getBalance(wallet.address), amount)
 
             await assertReversion(lockFromWallet({
                 walletAddress: wallet.address,
-                assetHash: ETH_ASSET_HASH,
+                assetHash: ETH_ADDRESS,
                 targetProxyHash,
                 toAssetHash,
                 feeAddress,
