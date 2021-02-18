@@ -726,7 +726,7 @@ contract LockProxy is ReentrancyGuard {
         //  2. The call itself is made, and success asserted
         //  3. The return value is decoded, which in turn checks the size of the returned data.
         // solhint-disable-next-line max-line-length
-        require(_isContract(address(token)), "SafeERC20: call to non-contract");
+        require(Utils.isContract(address(token)), "SafeERC20: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, bytes memory returndata) = address(token).call(data);
@@ -736,33 +736,5 @@ contract LockProxy is ReentrancyGuard {
             // solhint-disable-next-line max-line-length
             require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
         }
-    }
-
-    /**
-     * @dev Returns true if `account` is a contract.
-     *
-     * [IMPORTANT]
-     * ====
-     * It is unsafe to assume that an address for which this function returns
-     * false is an externally-owned account (EOA) and not a contract.
-     *
-     * Among others, `_isContract` will return false for the following
-     * types of addresses:
-     *
-     *  - an externally-owned account
-     *  - a contract in construction
-     *  - an address where a contract will be created
-     *  - an address where a contract lived, but was destroyed
-     * ====
-     */
-    function _isContract(address account) private view returns (bool) {
-        // According to EIP-1052, 0x0 is the value returned for not-yet created accounts
-        // and 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470 is returned
-        // for accounts without code, i.e. `keccak256('')`
-        bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
-        // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
-        return (codehash != accountHash && codehash != 0x0);
     }
 }
