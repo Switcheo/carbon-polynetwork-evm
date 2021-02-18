@@ -228,7 +228,7 @@ contract('Test lock', async (accounts) => {
                 feeAddress,
                 [amount, '201', '200'],
                 { from: user }
-            ), 'Fee amount cannot be greater than amount')
+            ), 'Fee amount must be less than amount')
 
             await assertAsync(jrc.balanceOf(proxy.address), '0')
         })
