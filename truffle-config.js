@@ -35,7 +35,7 @@ module.exports = {
             gasPrice: 20 * 1000000000
         },
         bsctestnet: {
-            provider: function () {
+            provider: function() {
                 const PrivateKeyProvider = require('truffle-privatekey-provider')
                 return new PrivateKeyProvider(
                     process.env.controlKey,
