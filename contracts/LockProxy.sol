@@ -70,17 +70,17 @@ contract LockProxy is ReentrancyGuard {
     mapping(address => bool) public wallets;
 
     event LockEvent(
-        address fromAssetHash,
-        address fromAddress,
-        uint64 toChainId,
+        address indexed tokenAddress,
+        address indexed fromAddress,
+        uint64 indexed toChainId,
         bytes toAssetHash,
         bytes toAddress,
         bytes txArgs
     );
 
     event UnlockEvent(
-        address toAssetHash,
-        address toAddress,
+        address indexed tokenAddress,
+        address indexed toAddress,
         uint256 amount,
         bytes txArgs
     );
