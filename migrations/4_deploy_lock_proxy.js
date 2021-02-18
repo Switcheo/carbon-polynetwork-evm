@@ -1,6 +1,7 @@
 const CCMMock = artifacts.require('CCMMock')
 const CCMProxyMock = artifacts.require('CCMProxyMock')
 const LockProxy = artifacts.require('LockProxy')
+const SWTHCoin = artifacts.require('SWTHCoin')
 const { LOCAL_COUNTERPART_CHAIN_ID } = require('../test/constants')
 
 module.exports = function(deployer, network) {
@@ -18,5 +19,8 @@ module.exports = function(deployer, network) {
         }
 
         await deployer.deploy(LockProxy, ccmProxyAddress, counterpartChainId)
+
+        const lockProxyAddress = LockProxy.address
+        await deployer.deploy(SWTHCoin, lockProxyAddress)
     })
 }
