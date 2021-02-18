@@ -1,5 +1,5 @@
 const { web3, getJrc, getLockProxy, getCcm, assertAsync, assertReversion } = require('../utils')
-const { ETH_ASSET_HASH, ZERO_BYTES } = require('../constants')
+const { ETH_ADDRESS, ZERO_BYTES } = require('../constants')
 
 const { LOCAL_COUNTERPART_CHAIN_ID } = require('../constants')
 
@@ -20,13 +20,13 @@ contract('Test registerAsset', async (accounts) => {
 
     contract('when parameters are valid', async () => {
         it('updates the registry for eth', async () => {
-            await assertAsync(proxy.registry(ETH_ASSET_HASH), ZERO_BYTES)
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, targetProxyHash, toAssetHash, chainId)
+            await assertAsync(proxy.registry(ETH_ADDRESS), ZERO_BYTES)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, targetProxyHash, toAssetHash, chainId)
             const hash = web3.utils.soliditySha3(
                 { type: 'bytes', value: targetProxyHash },
                 { type: 'bytes', value: toAssetHash }
             )
-            await assertAsync(proxy.registry(ETH_ASSET_HASH), hash)
+            await assertAsync(proxy.registry(ETH_ADDRESS), hash)
         })
     })
 

@@ -1,5 +1,5 @@
 const { web3, getJrc, getLockProxy, getCcm, assertAsync, assertReversion } = require('../utils')
-const { ETH_ASSET_HASH } = require('../constants')
+const { ETH_ADDRESS } = require('../constants')
 
 const { LOCAL_COUNTERPART_CHAIN_ID } = require('../constants')
 
@@ -27,13 +27,13 @@ contract('Test unlock', async (accounts) => {
             await assertAsync(web3.eth.getBalance(proxy.address), amount)
             await assertAsync(web3.eth.getBalance(receiver), '0')
 
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, fromProxyHash, fromAssetHash, chainId)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, fromProxyHash, fromAssetHash, chainId)
 
             await ccm.unlock(
                 proxy.address,
                 fromProxyHash,
                 fromAssetHash,
-                ETH_ASSET_HASH,
+                ETH_ADDRESS,
                 receiver,
                 amount,
                 chainId
@@ -77,13 +77,13 @@ contract('Test unlock', async (accounts) => {
             await assertAsync(web3.eth.getBalance(proxy.address), amount)
             await assertAsync(web3.eth.getBalance(receiver), '0')
 
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, fromProxyHash, fromAssetHash, chainId)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, fromProxyHash, fromAssetHash, chainId)
 
             await assertReversion(ccm.unlock(
                 proxy.address,
                 fromProxyHash,
                 fromAssetHash,
-                ETH_ASSET_HASH,
+                ETH_ADDRESS,
                 receiver,
                 amount,
                 chainId + 1
@@ -102,13 +102,13 @@ contract('Test unlock', async (accounts) => {
             await assertAsync(web3.eth.getBalance(proxy.address), amount)
             await assertAsync(web3.eth.getBalance(receiver), '0')
 
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, fromProxyHash, fromAssetHash, chainId)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, fromProxyHash, fromAssetHash, chainId)
 
             await assertReversion(ccm.unlock(
                 proxy.address,
                 fromProxyHash,
                 '0x1',
-                ETH_ASSET_HASH,
+                ETH_ADDRESS,
                 receiver,
                 amount,
                 chainId
