@@ -656,6 +656,11 @@ contract LockProxy is ReentrancyGuard {
         ));
 
         require(
+          _user != address(0),
+          "Invalid signature"
+        );
+
+        require(
             _user == ecrecover(prefixedMessage, _v, _r, _s),
             "Invalid signature"
         );
