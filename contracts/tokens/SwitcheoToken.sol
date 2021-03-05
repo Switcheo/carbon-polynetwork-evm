@@ -64,13 +64,13 @@ contract SwitcheoToken is ERC20, ERC20Detailed {
   }
 
   // TODO: remove me
-  function mint(uint256 amount) external returns (bool) {
+  function mint(uint256 amount) external isNotProd returns (bool) {
       _mint(msg.sender, amount);
       return true;
   }
 
   // TODO: remove me
-  function burn(uint256 amount) external returns (bool) {
+  function burn(uint256 amount) external isNotProd returns (bool) {
       _burn(msg.sender, amount);
       return true;
   }
