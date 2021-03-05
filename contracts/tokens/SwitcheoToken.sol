@@ -54,7 +54,7 @@ contract SwitcheoToken is ERC20, ERC20Detailed {
   function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
     require(msg.sender != lockProxyAddress, "SwitcheoToken: lockProxy should not call transferFrom");
 
-    ERC20(this).transferFrom(sender, recipient, amount);
+    super.transferFrom(sender, recipient, amount);
 
     if (recipient == lockProxyAddress) {
         _burn(recipient, amount); // auto-burn to maintain total supply
