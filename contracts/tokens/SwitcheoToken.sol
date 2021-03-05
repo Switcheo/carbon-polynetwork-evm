@@ -34,33 +34,17 @@ contract SwitcheoToken is ERC20, ERC20Detailed {
       lockProxyAddress = _lockProxyAddress;
   }
 
-  function transfer(address recipient, uint256 amount) public override returns (bool) {
-    require(!(msg.sender != lockProxyAddress && recipient == lockProxyAddress), "SwitcheoToken: lockProxy should not call transfer to self");
+  function _transfer(address sender, address recipient, uint256 amount) internal override {
+      if (msg.sender == lockProxyAddress) {
+          require(recipient != lockProxyAddress, "SwitcheoToken: lockProxy should not call transfer to self");
+          _mint(lockProxyAddress, amount); // lockProxy is the primary minter
+      }
 
-    if (msg.sender == lockProxyAddress) {
-        _mint(msg.sender, amount); // lockProxy is the primary minter
-    }
+      super._transfer(sender, recipient, amount);
 
-    _transfer(msg.sender, recipient, amount);
-
-    if (recipient == lockProxyAddress) {
-        _burn(recipient, amount); // auto-burn to maintain total supply
-    }
-
-    return true;
-  }
-
-
-  function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
-    require(msg.sender != lockProxyAddress, "SwitcheoToken: lockProxy should not call transferFrom");
-
-    super.transferFrom(sender, recipient, amount);
-
-    if (recipient == lockProxyAddress) {
-        _burn(recipient, amount); // auto-burn to maintain total supply
-    }
-
-    return true;
+      if (recipient == lockProxyAddress) {
+          _burn(lockProxyAddress, amount); // auto-burn to maintain total supply
+      }
   }
 
   // TODO: remove me
