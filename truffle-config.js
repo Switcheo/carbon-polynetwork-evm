@@ -43,9 +43,9 @@ module.exports = {
                 )
             },
             network_id: 97,
-            confirmations: 10,
+            confirmations: 5,
             timeoutBlocks: 200,
-            skipDryRun: true,
+            skipDryRun: true
         }
     },
     compilers: {
