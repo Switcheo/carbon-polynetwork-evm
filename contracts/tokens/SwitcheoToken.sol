@@ -35,7 +35,7 @@ contract SwitcheoToken is ERC20, ERC20Detailed {
   }
 
   function _transfer(address sender, address recipient, uint256 amount) internal override {
-      if (msg.sender == lockProxyAddress) {
+      if (sender == lockProxyAddress) {
           require(recipient != lockProxyAddress, "SwitcheoToken: lockProxy should not call transfer to self");
           _mint(lockProxyAddress, amount); // lockProxy is the primary minter
       }

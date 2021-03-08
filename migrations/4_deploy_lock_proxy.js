@@ -20,9 +20,16 @@ module.exports = function(deployer, network) {
             counterpartChainId = LOCAL_COUNTERPART_CHAIN_ID
         }
 
-        await deployer.deploy(LockProxy, ccmProxyAddress, counterpartChainId)
+        //  deploy SwitcheoToken
+        await deployer.deploy(SwitcheoToken)
+        const swithcheoTokenAddress = SwitcheoToken.address
+        const swithcheoTokenInstance = await SwitcheoToken.deployed()
 
+        //  deploy LockProxy
+        await deployer.deploy(LockProxy, swithcheoTokenAddress, ccmProxyAddress, counterpartChainId)
         const lockProxyAddress = LockProxy.address
-        await deployer.deploy(SwitcheoToken, lockProxyAddress)
+
+        // initialise LockProxy address for SwitcheoToken
+        await swithcheoTokenInstance.initalize(lockProxyAddress)
     })
 }
