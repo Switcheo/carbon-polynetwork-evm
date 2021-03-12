@@ -1,10 +1,13 @@
 // See http://truffleframework.com/docs/advanced/configuration for more details
 module.exports = {
     plugins: [
-        'truffle-plugin-verify'
+        // 'truffle-plugin-verify',
+        'truffle-source-verify'
     ],
     api_keys: {
-        etherscan: 'M56BUJAR279SGEEZIGYE94C4R1EB3RBYMY'
+        etherscan: 'M56BUJAR279SGEEZIGYE94C4R1EB3RBYMY',
+        bscscan: 'MY_API_KEY',
+        hecoinfo: ''
     },
     networks: {
         development: {

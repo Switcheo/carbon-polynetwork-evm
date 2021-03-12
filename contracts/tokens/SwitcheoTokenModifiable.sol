@@ -8,12 +8,12 @@ import "../libs/ownership/Ownable.sol";
 import "../libs/math/SafeMath.sol";
 
 /**
-* @title SwitcheoTokenModifable - Standard ERC20 token
+* @title SwitcheoTokenModifiable - Standard ERC20 token
 * with ability for owner to add multiple lock proxies.
 * @dev Implementation of the basic standard token.
 * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 */
-contract SwitcheoTokenModifable is ERC20, ERC20Detailed, Ownable {
+contract SwitcheoTokenModifiable is ERC20, ERC20Detailed, Ownable {
   using SafeMath for uint256;
 
   mapping(address => bool) lockProxyAddresses;
