@@ -8,8 +8,17 @@ module.exports = function(deployer, network) {
     deployer.then(async () => {
         // let counterpartChainId = 192
         // let ccmProxyAddress = '0x7087E66D6874899A331b926C261fa5059328d95F'
-        let counterpartChainId = 195
-        let ccmProxyAddress = '0x441C035446c947a97bD36b425B67907244576990'
+        let counterpartChainId
+        let ccmProxyAddress
+
+        if (network === 'bscmainnet') {
+            console.log('===== deploying for mainnet =====')
+            counterpartChainId = 5
+            ccmProxyAddress = '0xABD7f7B89c5fD5D0AEf06165f8173b1b83d7D5c9'
+        } else {
+            counterpartChainId = 197
+            ccmProxyAddress = '0x441C035446c947a97bD36b425B67907244576990'
+        }
 
         if (network === 'development') {
             await deployer.deploy(CCMMock)
