@@ -59,6 +59,19 @@ module.exports = {
             confirmations: 5,
             timeoutBlocks: 200,
             skipDryRun: true
+        },
+        hecomainnet: {
+            provider: function() {
+                const PrivateKeyProvider = require('truffle-privatekey-provider')
+                return new PrivateKeyProvider(
+                    process.env.controlKey,
+                    `https://http-mainnet.hecochain.com/`
+                )
+            },
+            network_id: 128,
+            confirmations: 5,
+            timeoutBlocks: 200,
+            skipDryRun: true
         }
     },
     compilers: {
