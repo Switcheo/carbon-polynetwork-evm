@@ -7,7 +7,7 @@ module.exports = {
     api_keys: {
         etherscan: 'M56BUJAR279SGEEZIGYE94C4R1EB3RBYMY',
         bscscan: 'MY_API_KEY',
-        hecoinfo: ''
+        hecoinfo: '3X9BFNKQ2EYPSCW9EREJWTA9DKITZH238Q'
     },
     networks: {
         development: {

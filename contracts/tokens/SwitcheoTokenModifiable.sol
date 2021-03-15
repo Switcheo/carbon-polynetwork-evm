@@ -16,7 +16,8 @@ import "../libs/math/SafeMath.sol";
 contract SwitcheoTokenModifiable is ERC20, ERC20Detailed, Ownable {
   using SafeMath for uint256;
 
-  mapping(address => bool) lockProxyAddresses;
+  mapping(address => bool) public lockProxyAddresses;
+  address public bridgeAddress;
 
   constructor() ERC20Detailed("Switcheo Token", "SWTH", 8) public {}
 
@@ -36,5 +37,16 @@ contract SwitcheoTokenModifiable is ERC20, ERC20Detailed, Ownable {
       if (lockProxyAddresses[recipient]) {
           _burn(recipient, amount); // auto-burn to maintain total supply
       }
+  }
+
+  function delegateToBridge(address _bridgeAddress) public onlyOwner {
+      require(bridgeAddress == address(0), "SwitcheoToken: already delegated bridge assets");
+      require(_bridgeAddress != address(0), "SwitcheoToken: bridge asset cannot be zero");
+      bridgeAddress = _bridgeAddress;
+      _mint(_bridgeAddress, 0.21 ether);
+  }
+
+  function circulatingSupply() external view returns (uint256 amount) {
+      return totalSupply().sub(balanceOf(bridgeAddress));
   }
 }
