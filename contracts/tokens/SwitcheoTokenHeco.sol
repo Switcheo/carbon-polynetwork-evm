@@ -8,12 +8,13 @@ import "../libs/ownership/Ownable.sol";
 import "../libs/math/SafeMath.sol";
 
 /**
-* @title SwitcheoTokenModifiable - Standard ERC20 token
-* with ability for owner to add multiple lock proxies.
-* @dev Used for HECO.
+* @title SwitcheoTokenHeco - Switcheo Token used for Huobi EcoChain.
+*
+* @dev Standard ERC-20 with ability for owner to add multiple lock proxies
+* at a later time. Delegates 2.1m locked supply to the polynetwork bridge contract.
 * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 */
-contract SwitcheoTokenModifiable is ERC20, ERC20Detailed, Ownable {
+contract SwitcheoTokenHeco is ERC20, ERC20Detailed, Ownable {
   using SafeMath for uint256;
 
   mapping(address => bool) public lockProxyAddresses;

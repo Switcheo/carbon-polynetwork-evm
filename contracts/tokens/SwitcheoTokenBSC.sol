@@ -7,12 +7,13 @@ import "../libs/token/ERC20/ERC20Detailed.sol";
 import "../libs/math/SafeMath.sol";
 
 /**
-* @title SwitcheoToken - Standard ERC20 token
+* @title SwitcheoTokenBSC - Switcheo Token for Binance Smart Chain (BSC)
 *
-* @dev Used for BSC.
+* @dev Standard ERC20 that mints / burns to the PoS lockProxy
+* contract.
 * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 */
-contract SwitcheoToken is ERC20, ERC20Detailed {
+contract SwitcheoTokenBSC is ERC20, ERC20Detailed {
   using SafeMath for uint256;
 
   address public lockProxyAddress;

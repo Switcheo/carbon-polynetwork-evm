@@ -1,7 +1,7 @@
 const CCMMock = artifacts.require('CCMMock')
 const CCMProxyMock = artifacts.require('CCMProxyMock')
 const LockProxy = artifacts.require('LockProxy')
-const SwitcheoToken = artifacts.require('SwitcheoToken')
+const SwitcheoToken = artifacts.require('SwitcheoTokenBSC')
 const { LOCAL_COUNTERPART_CHAIN_ID } = require('../test/constants')
 
 module.exports = function(deployer, network) {
