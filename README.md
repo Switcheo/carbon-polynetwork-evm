@@ -1,25 +1,33 @@
 # Switcheo TradeHub Ethereum Deposit Contract
 
-This is the repository contains the Ethereum deposit contracts for Switcheo TradeHub.
+This is the repository contains the Ethereum (or other EVM-chains) deposit contracts for Switcheo TradeHub.
 
 ## Setup
 
 1. Install [Truffle ^5.1.2](https://github.com/trufflesuite/truffle)
-```
-npm install -g truffle
-```
+
+    ```bash
+    npm install -g truffle
+    ```
+
 2. Install [Ganache-CLI ^6.9.1](https://github.com/trufflesuite/ganache-cli)
-```
-npm install -g ganache-cli
-```
+
+    ```bash
+    npm install -g ganache-cli
+    ```
+
 3. Install [Solhint ^2.1.0](https://github.com/protofire/solhint)
-```
-npm install -g solhint
-```
+
+    ```bash
+    npm install -g solhint
+    ```
+
 4. Run Ganache-CLI with:
-```
-ganache-cli -m "ladder soft balcony kiwi sword shadow volcano reform cricket wall initial normal" -p 7545 -l 8000000
-```
+
+    ```bash
+    ganache-cli -m "ladder soft balcony kiwi sword shadow volcano reform cricket wall initial normal" -p 7545 -l 8000000
+    ```
+
 5. Install node modules with `npm install`
 6. Run `truffle migrate` to deploy the contracts to Ganache
 7. Run `truffle test` to run test files
@@ -27,7 +35,7 @@ ganache-cli -m "ladder soft balcony kiwi sword shadow volcano reform cricket wal
 
 ## LockProxy
 
-The LockProxy contract at `contracts/LockProxy.sol` is a variation of https://github.com/polynetwork/eth-contracts/blob/master/contracts/core/lock_proxy/LockProxy.sol, and is intended to interact with the CCM (CrossChainManager) contract of the [PolyNetwork](https://www.poly.network/).
+The LockProxy contract at `contracts/LockProxy.sol` is a variation of PolyNetwork's [LockProxy](https://github.com/polynetwork/eth-contracts/blob/master/contracts/core/lock_proxy/LockProxy.sol), and is intended to interact with the CCM (CrossChainManager) contract of the [PolyNetwork](https://www.poly.network/).
 
 The main purpose of the contract is to facilitate deposits and withdrawals into Switcheo TradeHub, which can be considered to be a side-chain.
 
@@ -63,7 +71,7 @@ However, this structure would be more complicated, and if a new "LockProxy" is r
 
 Withdrawals are initiated on Switcheo TradeHub, and would result in the `LockProxy.unlock` function being called by the CCM contract, the funds would then be transferred to the specified withdrawal address.
 
-To send ETH, `call` is used instead of `transfer`. This follows the recommendation from https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/, since the withdrawal address could be a contract.
+To send ETH, `call` is used instead of `transfer`. This follows the recommendation from [this report](https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/), since the withdrawal address could be a contract.
 
 ## Extensions
 
@@ -76,14 +84,30 @@ Extensions can be removed by the `removeExtension` method, also callable through
 
 ## Addresses
 
+### Ethereum
+
 Devnet LockProxy (Ropsten): 0x7404752ac021940d0c85a25ce2e3aadce9325292
 
 Mainnet LockProxy: 0x9a016ce184a22dbf6c17daa59eb7d3140dbd1c54
 
-## Verifying heco contract on https://hecoinfo.com/
+### Binance Smart Chain (BSC)
 
-Make sure you add the heco info api key in ```truffle-config.js```  ```hecoinfo: '<YOUR_KEY>''```, use env variable or remember to delete after.
+Devnet LockProxy (Binance TestNet): -
+
+Mainnet LockProxy: 0xb5d4f343412dc8efb6ff599d790074d0f1e8d430
+
+Switcheo Token: 0x250b211ee44459dad5cd3bca803dd6a7ecb5d46c
+
+### Huobi EcoChain (Heco)
+
+Switcheo Token: 0x14127C943752d265B21D6963F8576A05c5c8e59c
+
+## Misc
+
+**Verifying Heco contract on [https://hecoinfo.com](https://hecoinfo.com)**
+
+Make sure you add the heco info api key in `truffle-config.js`  `hecoinfo: '<YOUR_KEY>'`, use env variable or remember to delete after.
 
 Then run:
 
-```npx truffle run etherscan ContractName --network hecomainnet --debug```
+`npx truffle run etherscan ContractName --network hecomainnet --debug`
