@@ -1,5 +1,11 @@
 // See http://truffleframework.com/docs/advanced/configuration for more details
 module.exports = {
+    plugins: [
+        'truffle-plugin-verify'
+    ],
+    api_keys: {
+        etherscan: 'M56BUJAR279SGEEZIGYE94C4R1EB3RBYMY'
+    },
     networks: {
         development: {
             host: '127.0.0.1',
@@ -27,6 +33,32 @@ module.exports = {
             },
             network_id: 1,
             gasPrice: 20 * 1000000000
+        },
+        bsctestnet: {
+            provider: function() {
+                const PrivateKeyProvider = require('truffle-privatekey-provider')
+                return new PrivateKeyProvider(
+                    process.env.controlKey,
+                    `https://data-seed-prebsc-1-s2.binance.org:8545/`
+                )
+            },
+            network_id: 97,
+            confirmations: 5,
+            timeoutBlocks: 200,
+            skipDryRun: true
+        },
+        bscmainnet: {
+            provider: function() {
+                const PrivateKeyProvider = require('truffle-privatekey-provider')
+                return new PrivateKeyProvider(
+                    process.env.controlKey,
+                    `https://bsc-dataseed.binance.org/`
+                )
+            },
+            network_id: 56,
+            confirmations: 2,
+            timeoutBlocks: 200,
+            skipDryRun: true
         }
     },
     compilers: {
