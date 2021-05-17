@@ -1,10 +1,13 @@
 // See http://truffleframework.com/docs/advanced/configuration for more details
 module.exports = {
     plugins: [
-        'truffle-plugin-verify'
+        // 'truffle-plugin-verify',
+        'truffle-source-verify'
     ],
     api_keys: {
-        etherscan: 'M56BUJAR279SGEEZIGYE94C4R1EB3RBYMY'
+        etherscan: 'M56BUJAR279SGEEZIGYE94C4R1EB3RBYMY',
+        bscscan: 'MY_API_KEY',
+        hecoinfo: '3X9BFNKQ2EYPSCW9EREJWTA9DKITZH238Q'
     },
     networks: {
         development: {
@@ -56,7 +59,20 @@ module.exports = {
                 )
             },
             network_id: 56,
-            confirmations: 2,
+            confirmations: 5,
+            timeoutBlocks: 200,
+            skipDryRun: true
+        },
+        hecomainnet: {
+            provider: function() {
+                const PrivateKeyProvider = require('truffle-privatekey-provider')
+                return new PrivateKeyProvider(
+                    process.env.controlKey,
+                    `https://http-mainnet.hecochain.com/`
+                )
+            },
+            network_id: 128,
+            confirmations: 5,
             timeoutBlocks: 200,
             skipDryRun: true
         }

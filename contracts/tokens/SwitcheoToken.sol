@@ -9,7 +9,7 @@ import "../libs/math/SafeMath.sol";
 /**
 * @title SwitcheoToken - Standard ERC20 token
 *
-* @dev Implementation of the basic standard token.
+* @dev Used for BSC.
 * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 */
 contract SwitcheoToken is ERC20, ERC20Detailed {
