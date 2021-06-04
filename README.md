@@ -86,9 +86,11 @@ Extensions can be removed by the `removeExtension` method, also callable through
 
 ### Ethereum
 
-Devnet LockProxy (Ropsten): 0x7404752ac021940d0c85a25ce2e3aadce9325292
+Devnet LockProxy (Ropsten): 0x91F453851E297524749a740D53Cf54A89231487c
 
 Mainnet LockProxy: 0x9a016ce184a22dbf6c17daa59eb7d3140dbd1c54
+
+Switcheo Token: 0xB4371dA53140417CBb3362055374B10D97e420bB
 
 ### Binance Smart Chain (BSC)
 
@@ -104,10 +106,12 @@ Switcheo Token: 0x14127C943752d265B21D6963F8576A05c5c8e59c
 
 ## Misc
 
-**Verifying Heco contract on [https://hecoinfo.com](https://hecoinfo.com)**
+**Verifying token contract on Etherscan, BSCScan etc.**
 
-Make sure you add the heco info api key in `truffle-config.js`  `hecoinfo: '<YOUR_KEY>'`, use env variable or remember to delete after.
+Quickly verify contract on explorer by using [truffle-plugin-verify](https://github.com/rkalis/truffle-plugin-verify)
 
-Then run:
+E.g. for hecoinfo:
 
-`npx truffle run etherscan ContractName --network hecomainnet --debug`
+```bash
+verifyAPIKey=<YOUR_KEY> npx truffle run etherscan ContractName --network hecomainnet --debug
+```

@@ -5,9 +5,9 @@ module.exports = {
         'truffle-source-verify'
     ],
     api_keys: {
-        etherscan: 'M56BUJAR279SGEEZIGYE94C4R1EB3RBYMY',
-        bscscan: 'MY_API_KEY',
-        hecoinfo: '3X9BFNKQ2EYPSCW9EREJWTA9DKITZH238Q'
+        etherscan: process.env.verifyAPIKey,
+        bscscan: process.env.verifyAPIKey,
+        hecoinfo: process.env.verifyAPIKey
     },
     networks: {
         development: {
@@ -20,18 +20,18 @@ module.exports = {
                 const PrivateKeyProvider = require('truffle-privatekey-provider')
                 return new PrivateKeyProvider(
                     process.env.controlKey,
-                    'https://ropsten.infura.io/v3/' + process.env.infuraKey
+                    'https://eth-ropsten.alchemyapi.io/v2/' + process.env.alchemyKey
                 )
             },
             network_id: 3,
-            gasPrice: 50 * 1000000000
+            gasPrice: 30 * 1000000000
         },
         mainnet: {
             provider: function() {
                 const PrivateKeyProvider = require('truffle-privatekey-provider')
                 return new PrivateKeyProvider(
                     process.env.controlKey,
-                    'https://mainnet.infura.io/v3/' + process.env.infuraKey
+                    'https://eth-mainnet.alchemyapi.io/v2/' + process.env.alchemyKey
                 )
             },
             network_id: 1,
