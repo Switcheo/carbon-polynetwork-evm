@@ -5,8 +5,8 @@ const { LOCAL_COUNTERPART_CHAIN_ID } = require('../test/constants')
 
 module.exports = function(deployer, network) {
     deployer.then(async () => {
-        let counterpartChainId = 192
-        let ccmProxyAddress = '0x7087E66D6874899A331b926C261fa5059328d95F'
+        let counterpartChainId = 198
+        let ccmProxyAddress = '0xb600c8a2e8852832B75DB9Da1A3A1c173eAb28d8'
 
         if (network === 'development') {
             await deployer.deploy(CCMMock)

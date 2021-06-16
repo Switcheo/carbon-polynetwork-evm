@@ -11,11 +11,11 @@ module.exports = {
                 const PrivateKeyProvider = require('truffle-privatekey-provider')
                 return new PrivateKeyProvider(
                     process.env.controlKey,
-                    'https://ropsten.infura.io/v3/' + process.env.infuraKey
+                    'https://eth-ropsten.alchemyapi.io/v2/Rog1kuZQf1R8X7EAmsXs7oFyQXyzIH-4'
                 )
             },
             network_id: 3,
-            gasPrice: 50 * 1000000000
+            gasPrice: 30 * 1000000000
         },
         mainnet: {
             provider: function() {
