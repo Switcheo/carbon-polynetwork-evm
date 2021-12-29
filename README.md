@@ -1,6 +1,6 @@
 # Carbon - EVM Contracts
 
-This is the repository contains the Ethereum (and all EVM-compatible chain) deposit and wrapped native token (SWTH) contracts for Carbon via the Polynetwork bridge.
+This repository contains the Ethereum (and all EVM-compatible chain) deposit and wrapped native token (SWTH) contracts for Carbon via the Polynetwork bridge.
 
 ## Setup
 
