@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 // See http://truffleframework.com/docs/advanced/configuration for more details
 module.exports = {
     plugins: [
