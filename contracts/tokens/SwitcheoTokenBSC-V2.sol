@@ -46,7 +46,7 @@ contract SWTHTokenBSCV2 is ERC20, ERC20Detailed {
 
   function swapLegacy(address sender, uint256 amount) public {
     IERC20 legacyContract = IERC20(legacyAddress);
-    legacyContract.transferFrom(sender, address(this), amount);
+    legacyContract.transferFrom(sender, address(0), amount);
     _mint(sender, amount);
   }
 }
