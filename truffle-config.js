@@ -1,3 +1,5 @@
+require("dotenv").config()
+
 // See http://truffleframework.com/docs/advanced/configuration for more details
 module.exports = {
     networks: {
@@ -15,7 +17,10 @@ module.exports = {
                 )
             },
             network_id: 3,
-            gasPrice: 30 * 1000000000
+            gasPrice: 40 * 1000000000,
+            confirmations: 2,
+            timeoutBlocks: 200,
+            skipDryRun: true
         },
         mainnet: {
             provider: function() {

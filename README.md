@@ -4,9 +4,11 @@ This is the repo for the Switcheo Chain ETH contracts.
 
 ## Setup
 
-1. Install [Truffle ^5.1.2](https://github.com/trufflesuite/truffle)
+- **Ensure you're using node v12, it does not work with node v14**
+
+1. Install [Truffle ~5.1.5](https://github.com/trufflesuite/truffle)
 ```
-npm install -g truffle
+npm install -g truffle@5.1.5
 ```
 2. Install [Ganache-CLI ^6.9.1](https://github.com/trufflesuite/ganache-cli)
 ```
