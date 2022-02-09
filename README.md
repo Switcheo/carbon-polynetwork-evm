@@ -4,10 +4,12 @@ This repository contains the Ethereum (and all EVM-compatible chain) deposit and
 
 ## Setup
 
+- **Ensure you're using node v12, it does not work with node v14**
+
 1. Install [Truffle ^5.1.2](https://github.com/trufflesuite/truffle)
 
     ```bash
-    npm install -g truffle
+    npm install -g truffle@5.1.2
     ```
 
 2. Install [Ganache-CLI ^6.9.1](https://github.com/trufflesuite/ganache-cli)
