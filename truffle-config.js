@@ -3,8 +3,8 @@ require("dotenv").config();
 // See http://truffleframework.com/docs/advanced/configuration for more details
 module.exports = {
     plugins: [
-        // 'truffle-plugin-verify',
-        'truffle-source-verify'
+        'truffle-plugin-verify',
+        // 'truffle-source-verify'
     ],
     api_keys: {
         etherscan: process.env.verifyAPIKey,
@@ -44,11 +44,11 @@ module.exports = {
                 const PrivateKeyProvider = require('truffle-privatekey-provider')
                 return new PrivateKeyProvider(
                     process.env.controlKey,
-                    `https://data-seed-prebsc-1-s2.binance.org:8545/`
+                    `https://data-seed-prebsc-1-s1.binance.org:8545/`
                 )
             },
             network_id: 97,
-            confirmations: 5,
+            confirmations: 3,
             timeoutBlocks: 200,
             skipDryRun: true
         },

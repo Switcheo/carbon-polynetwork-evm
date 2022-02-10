@@ -8,6 +8,7 @@
     "abi-decoder": "^2.0.1",
     "eslint": "^6.2.0",
     "eslint-config-google": "^0.13.0",
+    "truffle-plugin-verify": "^0.5.21",
     "truffle-source-verify": "git+https://github.com/wanyvic/truffle-source-verify.git",
     "web3": "^1.3.6"
   }
