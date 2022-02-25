@@ -2,6 +2,14 @@ require("dotenv").config()
 
 // See http://truffleframework.com/docs/advanced/configuration for more details
 module.exports = {
+    plugins: [
+        'truffle-plugin-verify'
+    ],
+    api_keys: {
+        etherscan: process.env.etherscanVerifyAPIKey,
+        bscscan: process.env.bscVerifyAPIKey,
+        hecoinfo: process.env.hecoVerifyAPIKey
+    },
     networks: {
         development: {
             host: '127.0.0.1',
