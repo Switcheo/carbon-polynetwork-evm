@@ -21,12 +21,26 @@ module.exports = {
                 const PrivateKeyProvider = require('truffle-privatekey-provider')
                 return new PrivateKeyProvider(
                     process.env.controlKey,
-                    'https://eth-ropsten.alchemyapi.io/v2/Rog1kuZQf1R8X7EAmsXs7oFyQXyzIH-4'
+                    'https://ropsten.infura.io/v3/9bca539684b6408d9dbcbb179e593eab'
                 )
             },
             network_id: 3,
-            gasPrice: 40 * 1000000000,
-            confirmations: 2,
+            gasPrice: 101 * 1000000000,
+            // gas: 8000000,
+            confirmations: 1,
+            timeoutBlocks: 200,
+            skipDryRun: true
+        },
+        rinkeby: {
+            provider: function() {
+                const PrivateKeyProvider = require('truffle-privatekey-provider')
+                return new PrivateKeyProvider(
+                    process.env.controlKey,
+                    'https://rinkeby.infura.io/v3/7cf21eaee93b49529f4da0ba7cf211af'
+                )
+            },
+            network_id: 4,
+            confirmations: 1,
             timeoutBlocks: 200,
             skipDryRun: true
         },

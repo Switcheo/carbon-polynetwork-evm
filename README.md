@@ -84,9 +84,15 @@ Mainnet LockProxy: 0x9a016ce184a22dbf6c17daa59eb7d3140dbd1c54
 
 ## Redeploy to devnet
 
-Update `4_deploy_lock_proxy.js`
+Update `4_deploy_lock_proxy.js`, ccmProxyAddress and counterpartChainId when necessary.
 
 ```bash
 # skips initial migration and deploy from 2_ onwards
 truffle migrate --network ropsten -f 2
+```
+
+## Verify contract
+
+```bash
+truffle run verify LockProxy@0x399b3801407859b2291F6b8B2133C168088b8e1e --network ropsten
 ```
