@@ -3,3 +3,5 @@ build/
 flattened/
 go-build/
 .env
+/artifacts
+/cache

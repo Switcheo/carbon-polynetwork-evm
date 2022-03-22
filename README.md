@@ -91,6 +91,8 @@ Update `4_deploy_lock_proxy.js`, ccmProxyAddress and counterpartChainId when nec
 truffle migrate --network ropsten -f 2
 ```
 
+WIP: `npx hardhat run scripts/deploy_lockproxy.js`
+
 ## Verify contract
 
 ```bash

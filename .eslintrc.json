@@ -16,15 +16,21 @@
         "ecmaVersion": 2018
     },
     "rules": {
-      "indent": "off",
-      "semi": ["error", "never"],
-      "object-curly-spacing": ["error", "always"],
-      "one-var": "off",
-      "max-len": ["error", { "code": 120 }],
-      "comma-dangle": ["error", "never"],
-      "require-jsdoc": "off",
-      "block-spacing": "off",
-      "brace-style": "off",
-      "guard-for-in": "off"
+        "indent": "off",
+        "semi": ["error", "never"],
+        "object-curly-spacing": ["error", "always"],
+        "one-var": "off",
+        "max-len": ["error", { "code": 120 }],
+        "comma-dangle": ["error", {
+            "arrays": "always",
+            "objects": "only-multiline",
+            "imports": "never",
+            "exports": "always",
+            "functions": "never"
+        }],
+        "require-jsdoc": "off",
+        "block-spacing": "off",
+        "brace-style": "off",
+        "guard-for-in": "off"
     }
 }
