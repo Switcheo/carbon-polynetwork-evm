@@ -5,7 +5,7 @@ const { LOCAL_COUNTERPART_CHAIN_ID } = require('../test/constants')
 
 module.exports = function(deployer, network) {
     deployer.then(async () => {
-        let counterpartChainId = 212
+        let counterpartChainId = 213
         let ccmProxyAddress = '0xb6cAd9baf43f780407F8e637Cd575a1c619f414c'
 
         if (network === 'development') {

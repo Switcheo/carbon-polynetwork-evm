@@ -48,10 +48,6 @@ module.exports = {
       polyId: 2,
     },
     hardhat: {
-      // eslint-disable-next-line max-len
-      // workaround from https://github.com/sc-forks/solidity-coverage/issues/652#issuecomment-896330136 . Remove when that issue is closed.
-      initialBaseFeePerGas: 0,
-      polyId: 2,
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/f7fd127c230e49b292bafd6c338995ea`,
@@ -82,12 +78,10 @@ module.exports = {
     ropsten: {
       url: `https://ropsten.infura.io/v3/9bca539684b6408d9dbcbb179e593eab`,
       accounts: [process.env.controlKey],
-      polyId: 223,
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/7cf21eaee93b49529f4da0ba7cf211af`,
       accounts: [process.env.controlKey],
-      polyId: 343,
     },
     arbitrum_testnet: {
       url: `https://rinkeby.arbitrum.io/rpc`,
@@ -96,7 +90,6 @@ module.exports = {
     bsc_testnet: {
       url: `https://data-seed-prebsc-1-s1.binance.org:8545`,
       accounts: [],
-      polyId: 79,
     },
     heco_testnet: {
       url: `https://http-testnet.hecochain.com`,

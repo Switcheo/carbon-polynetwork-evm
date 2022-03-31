@@ -13,7 +13,7 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile')
 
-  const counterpartChainId = 212
+  const counterpartChainId = 213
   const ccmProxyAddress = '0xb6cAd9baf43f780407F8e637Cd575a1c619f414c'
 
   // We get the contract to deploy
