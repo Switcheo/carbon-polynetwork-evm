@@ -13,16 +13,15 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile')
 
-  const counterpartChainId = 214
-  const ccmProxyAddress = '0xb6cAd9baf43f780407F8e637Cd575a1c619f414c'
+  const lockProxyAddress = '0x26a12a0349EEa0816ccaA7FdaBA16BB8325dDEbD'
 
   // We get the contract to deploy
-  const LockProxy = await hre.ethers.getContractFactory('LockProxy')
-  const lockProxy = await LockProxy.deploy(ccmProxyAddress, counterpartChainId)
+  const BridgeEntrance = await hre.ethers.getContractFactory('BridgeEntrance')
+  const bridgeEntrance = await BridgeEntrance.deploy(lockProxyAddress)
 
-  await lockProxy.deployed()
+  await bridgeEntrance.deployed()
 
-  console.log('LockProxy deployed to:', lockProxy.address)
+  console.log('BridgeEntrance deployed to:', bridgeEntrance.address)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
