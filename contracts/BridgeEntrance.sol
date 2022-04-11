@@ -65,42 +65,42 @@ contract BridgeEntrance is ReentrancyGuard {
 
     /// @dev Performs a deposit
     /// @param _assetHash the asset to deposit
-    /// @param _targetProxyHash the associated proxy hash on Switcheo TradeHub
-    /// @param _toAddress the hex version of the Switcheo TradeHub address to deposit to
-    /// @param _toAssetHash the associated asset hash on Switcheo TradeHub
-    /// @param _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
-    /// @param _values[0]: amount, the number of tokens to deposit
-    /// @param _values[1]: feeAmount, the number of tokens to be used as fees
-    /// @param _values[2]: callAmount, some tokens may burn an amount before transfer
+    /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo TradeHub
+    /// @param _bytesValues[1]: _toAddress the hex version of the Switcheo TradeHub address to deposit to
+    /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo TradeHub
+    /// @param _bytesValues[3]: _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
+    /// @param _uint256Values[0]: amount, the number of tokens to deposit
+    /// @param _uint256Values[1]: feeAmount, the number of tokens to be used as fees
+    /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
     /// so we allow a callAmount to support these tokens
     function lock(
         address _assetHash,
-        bytes calldata _targetProxyHash,
-        bytes calldata _toAddress,
-        bytes calldata _toAssetHash,
-        bytes calldata _feeAddress,
-        uint256[] calldata _values
+        bytes[] calldata _bytesValues,
+        uint256[] calldata _uint256Values
     )
         external
         payable
         nonReentrant
         returns (bool)
     {
+        bytes memory _targetProxyHash = _bytesValues[0];
+        bytes memory _toAddress = _bytesValues[1];
+        bytes memory _toAssetHash = _bytesValues[2];
+        bytes memory _feeAddress = _bytesValues[3];
+        bytes memory _toAddressBridge = _bytesValues[4];
+        bytes memory _toAssetHashBridge = _bytesValues[5];
 
         // it is very important that this function validates the success of a transfer correctly
         // since, once this line is passed, the deposit is assumed to be successful
         // which will eventually result in the specified amount of tokens being minted for the
         // _toAddress on Switcheo TradeHub
-        _transferIn(_assetHash, _values[0], _values[2]);
+        _transferIn(_assetHash, _uint256Values[0], _uint256Values[2]);
 
         _lock(
             _assetHash,
-            _targetProxyHash,
-            _toAssetHash,
-            _toAddress,
-            _values[0],
-            _values[1],
-            _feeAddress
+            _bytesValues,
+            _uint256Values[0],
+            _uint256Values[1]
         );
 
         return true;
@@ -127,17 +127,25 @@ contract BridgeEntrance is ReentrancyGuard {
     }
 
     /// @dev validates the asset registration and calls the CCM contract
+    /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo TradeHub
+    /// @param _bytesValues[1]: _toAddress the hex version of the Switcheo TradeHub address to deposit to
+    /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo TradeHub
+    /// @param _bytesValues[3]: _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
     function _lock(
         address _fromAssetHash,
-        bytes memory _targetProxyHash,
-        bytes memory _toAssetHash,
-        bytes memory _toAddress,
+        bytes[] calldata _bytesValues,
         uint256 _amount,
-        uint256 _feeAmount,
-        bytes memory _feeAddress
+        uint256 _feeAmount
     )
         private
     {
+        bytes memory _targetProxyHash = _bytesValues[0];
+        bytes memory _toAddress = _bytesValues[1];
+        bytes memory _toAssetHash = _bytesValues[2];
+        bytes memory _feeAddress = _bytesValues[3];
+        bytes memory _toAddressBridge = _bytesValues[4];
+        bytes memory _toAssetHashBridge = _bytesValues[5];
+
         require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
         require(_toAssetHash.length > 0, "Empty toAssetHash");
         require(_toAddress.length > 0, "Empty toAddress");
@@ -193,7 +201,7 @@ contract BridgeEntrance is ReentrancyGuard {
     {
         if (_assetHash == ETH_ASSET_HASH) {
             require(msg.value == _amount, "ETH transferred does not match the expected amount");
-            (bool sent, bytes memory data) = address(lockProxy).call{value: msg.value}("");
+            (bool sent,) = address(lockProxy).call{value: msg.value}("");
             require(sent, "Failed to send Ether to LockProxy");
             return;
         }
