@@ -42,6 +42,9 @@ contract BridgeEntrance is ReentrancyGuard {
         bytes feeAddress;
         bytes fromAddress;
         uint256 nonce;
+        uint256 lockType;
+        bytes toAddressBridge;
+        bytes toAssetHashBridge;
     }
 
     address public constant ETH_ASSET_HASH = address(0);
@@ -69,9 +72,10 @@ contract BridgeEntrance is ReentrancyGuard {
     /// @param _bytesValues[1]: _toAddress the hex version of the Switcheo TradeHub address to deposit to
     /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo TradeHub
     /// @param _bytesValues[3]: _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
-    /// @param _uint256Values[0]: amount, the number of tokens to deposit
-    /// @param _uint256Values[1]: feeAmount, the number of tokens to be used as fees
-    /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
+    /// @param _uint256Values[0]: _lockType: deposit, bridge
+    /// @param _uint256Values[1]: amount, the number of tokens to deposit
+    /// @param _uint256Values[2]: feeAmount, the number of tokens to be used as fees
+    /// @param _uint256Values[3]: callAmount, some tokens may burn an amount before transfer
     /// so we allow a callAmount to support these tokens
     function lock(
         address _assetHash,
@@ -83,25 +87,20 @@ contract BridgeEntrance is ReentrancyGuard {
         nonReentrant
         returns (bool)
     {
-        bytes memory _targetProxyHash = _bytesValues[0];
-        bytes memory _toAddress = _bytesValues[1];
-        bytes memory _toAssetHash = _bytesValues[2];
-        bytes memory _feeAddress = _bytesValues[3];
-        bytes memory _toAddressBridge = _bytesValues[4];
-        bytes memory _toAssetHashBridge = _bytesValues[5];
+        // bytes memory _targetProxyHash = _bytesValues[0];
+        // bytes memory _toAddress = _bytesValues[1];
+        // bytes memory _toAssetHash = _bytesValues[2];
+        // bytes memory _feeAddress = _bytesValues[3];
+        // bytes memory _toAddressBridge = _bytesValues[4];
+        // bytes memory _toAssetHashBridge = _bytesValues[5];
 
         // it is very important that this function validates the success of a transfer correctly
         // since, once this line is passed, the deposit is assumed to be successful
         // which will eventually result in the specified amount of tokens being minted for the
         // _toAddress on Switcheo TradeHub
-        _transferIn(_assetHash, _uint256Values[0], _uint256Values[2]);
+        _transferIn(_assetHash, _uint256Values[1], _uint256Values[3]);
 
-        _lock(
-            _assetHash,
-            _bytesValues,
-            _uint256Values[0],
-            _uint256Values[1]
-        );
+        _lock(_assetHash, _bytesValues, _uint256Values);
 
         return true;
     }
@@ -131,24 +130,31 @@ contract BridgeEntrance is ReentrancyGuard {
     /// @param _bytesValues[1]: _toAddress the hex version of the Switcheo TradeHub address to deposit to
     /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo TradeHub
     /// @param _bytesValues[3]: _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
+    /// @param _uint256Values[0]: _lockType: deposit, bridge
+    /// @param _uint256Values[1]: _amount, the number of tokens to deposit
+    /// @param _uint256Values[2]: _feeAmount, the number of tokens to be used as fees
     function _lock(
         address _fromAssetHash,
         bytes[] calldata _bytesValues,
-        uint256 _amount,
-        uint256 _feeAmount
+        uint256[] calldata _uint256Values
     )
         private
     {
         bytes memory _targetProxyHash = _bytesValues[0];
         bytes memory _toAddress = _bytesValues[1];
         bytes memory _toAssetHash = _bytesValues[2];
-        bytes memory _feeAddress = _bytesValues[3];
-        bytes memory _toAddressBridge = _bytesValues[4];
-        bytes memory _toAssetHashBridge = _bytesValues[5];
+        // bytes memory _feeAddress = _bytesValues[3];
+        // bytes memory _toAddressBridge = _bytesValues[4];
+        // bytes memory _toAssetHashBridge = _bytesValues[5];
+
+        // uint256 _lockType = _uint256Values[0];
+        uint256 _amount = _uint256Values[1];
+        uint256 _feeAmount = _uint256Values[2];
 
         require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
         require(_toAssetHash.length > 0, "Empty toAssetHash");
         require(_toAddress.length > 0, "Empty toAddress");
+        // TODO: validations for new params
         require(_amount > 0, "Amount must be more than zero");
         require(_feeAmount < _amount, "Fee amount cannot be greater than amount");
 
@@ -160,9 +166,12 @@ contract BridgeEntrance is ReentrancyGuard {
             toAddress: _toAddress,
             amount: _amount,
             feeAmount: _feeAmount,
-            feeAddress: _feeAddress,
+            feeAddress: _bytesValues[3],
             fromAddress: abi.encodePacked(msg.sender),
-            nonce: _getNextNonce()
+            nonce: _getNextNonce(),
+            lockType: _uint256Values[0],
+            toAddressBridge: _bytesValues[4],
+            toAssetHashBridge: _bytesValues[5]
         });
 
         bytes memory txData = _serializeTransferTxArgs(txArgs);
@@ -231,7 +240,10 @@ contract BridgeEntrance is ReentrancyGuard {
             ZeroCopySink.WriteUint255(args.feeAmount),
             ZeroCopySink.WriteVarBytes(args.feeAddress),
             ZeroCopySink.WriteVarBytes(args.fromAddress),
-            ZeroCopySink.WriteUint255(args.nonce)
+            ZeroCopySink.WriteUint255(args.nonce),
+            ZeroCopySink.WriteUint255(args.lockType),
+            ZeroCopySink.WriteVarBytes(args.toAddressBridge),
+            ZeroCopySink.WriteVarBytes(args.toAssetHashBridge)
         );
         return buff;
     }

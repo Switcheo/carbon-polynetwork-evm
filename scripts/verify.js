@@ -8,7 +8,7 @@ async function main() {
   // update addresses!!!
   const ccmProxyAddress = '0xb6cAd9baf43f780407F8e637Cd575a1c619f414c'
   const lockProxyAddress = '0x26a12a0349EEa0816ccaA7FdaBA16BB8325dDEbD'
-  const bridgeEntranceAddress = '0x94CAC0A6339D8cc4ff652a7B362d4c7257b148f3'
+  const bridgeEntranceAddress = '0x082bFBd17F30E560442b45d5a29D41693Abe97eD'
 
   const LockProxy = await hre.ethers.getContractFactory('LockProxy')
   const lockProxy = await LockProxy.attach(lockProxyAddress)
