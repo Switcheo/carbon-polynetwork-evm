@@ -35,13 +35,12 @@ contract BridgeEntrance is ReentrancyGuard {
     // used for cross-chain lock and unlock methods
     struct TransferTxArgs {
         uint256 lockType;
-        bytes fromAssetHash;
-        bytes toAssetHash;
+        bytes fromAssetAddress;
+        bytes fromAssetDenom;
         bytes toAddress;
         uint256 amount;
         uint256 feeAmount;
         bytes feeAddress;
-        bytes fromAddress;
         uint256 nonce;
         bytes toAddressBridge;
         bytes toAssetHashBridge;
@@ -53,10 +52,9 @@ contract BridgeEntrance is ReentrancyGuard {
     uint256 public currentNonce = 0; // TODO: delete me
 
     event LockEvent(
-        address fromAssetHash,
-        address fromAddress,
+        address fromAssetAddress,
         uint64 toChainId,
-        bytes toAssetHash,
+        bytes fromAssetDenom,
         bytes toAddress,
         bytes txArgs
     );
@@ -70,7 +68,7 @@ contract BridgeEntrance is ReentrancyGuard {
     /// @param _assetHash the asset to deposit
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo TradeHub
     /// @param _bytesValues[1]: _toAddress the hex version of the Switcheo TradeHub address to deposit to
-    /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo TradeHub
+    /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo TradeHub
     /// @param _bytesValues[3]: _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
     /// @param _uint256Values[0]: _lockType: deposit, bridge
     /// @param _uint256Values[1]: amount, the number of tokens to deposit
@@ -89,7 +87,7 @@ contract BridgeEntrance is ReentrancyGuard {
     {
         // bytes memory _targetProxyHash = _bytesValues[0];
         // bytes memory _toAddress = _bytesValues[1];
-        // bytes memory _toAssetHash = _bytesValues[2];
+        // bytes memory _fromAssetDenom = _bytesValues[2];
         // bytes memory _feeAddress = _bytesValues[3];
         // bytes memory _toAddressBridge = _bytesValues[4];
         // bytes memory _toAssetHashBridge = _bytesValues[5];
@@ -108,11 +106,11 @@ contract BridgeEntrance is ReentrancyGuard {
     /// @dev Validates that an asset's registration matches the given params
     /// @param _assetHash the address of the asset to check
     /// @param _proxyAddress the expected proxy address on Switcheo TradeHub
-    /// @param _toAssetHash the expected asset hash on Switcheo TradeHub
+    /// @param _fromAssetDenom the expected asset hash on Switcheo TradeHub
     function _validateAssetRegistration(
         address _assetHash,
         bytes memory _proxyAddress,
-        bytes memory _toAssetHash
+        bytes memory _fromAssetDenom
     )
         private
         view
@@ -120,7 +118,7 @@ contract BridgeEntrance is ReentrancyGuard {
         require(_proxyAddress.length == 20, "Invalid proxyAddress");
         bytes32 value = keccak256(abi.encodePacked(
             _proxyAddress,
-            _toAssetHash
+            _fromAssetDenom
         ));
         require(lockProxy.registry(_assetHash) == value, "Asset not registered");
     }
@@ -128,13 +126,13 @@ contract BridgeEntrance is ReentrancyGuard {
     /// @dev validates the asset registration and calls the CCM contract
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo TradeHub
     /// @param _bytesValues[1]: _toAddress the hex version of the Switcheo TradeHub address to deposit to
-    /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo TradeHub
+    /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo TradeHub
     /// @param _bytesValues[3]: _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
     /// @param _uint256Values[0]: _lockType: deposit, bridge
     /// @param _uint256Values[1]: _amount, the number of tokens to deposit
     /// @param _uint256Values[2]: _feeAmount, the number of tokens to be used as fees
     function _lock(
-        address _fromAssetHash,
+        address _fromAssetAddress,
         bytes[] calldata _bytesValues,
         uint256[] calldata _uint256Values
     )
@@ -142,7 +140,7 @@ contract BridgeEntrance is ReentrancyGuard {
     {
         bytes memory _targetProxyHash = _bytesValues[0];
         bytes memory _toAddress = _bytesValues[1];
-        bytes memory _toAssetHash = _bytesValues[2];
+        bytes memory _fromAssetDenom = _bytesValues[2];
         // bytes memory _feeAddress = _bytesValues[3];
         // bytes memory _toAddressBridge = _bytesValues[4];
         // bytes memory _toAssetHashBridge = _bytesValues[5];
@@ -152,23 +150,22 @@ contract BridgeEntrance is ReentrancyGuard {
         uint256 _feeAmount = _uint256Values[2];
 
         require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
-        require(_toAssetHash.length > 0, "Empty toAssetHash");
+        require(_fromAssetDenom.length > 0, "Empty fromAssetDenom");
         require(_toAddress.length > 0, "Empty toAddress");
         // TODO: validations for new params
         require(_amount > 0, "Amount must be more than zero");
         require(_feeAmount < _amount, "Fee amount cannot be greater than amount");
 
-        _validateAssetRegistration(_fromAssetHash, _targetProxyHash, _toAssetHash);
+        _validateAssetRegistration(_fromAssetAddress, _targetProxyHash, _fromAssetDenom);
 
         TransferTxArgs memory txArgs = TransferTxArgs({
             lockType: _uint256Values[0],
-            fromAssetHash: Utils.addressToBytes(_fromAssetHash),
-            toAssetHash: _toAssetHash,
+            fromAssetAddress: Utils.addressToBytes(_fromAssetAddress),
+            fromAssetDenom: _fromAssetDenom,
             toAddress: _toAddress,
             amount: _amount,
             feeAmount: _feeAmount,
             feeAddress: _bytesValues[3],
-            fromAddress: abi.encodePacked(msg.sender),
             nonce: _getNextNonce(),
             toAddressBridge: _bytesValues[4],
             toAssetHashBridge: _bytesValues[5]
@@ -182,7 +179,7 @@ contract BridgeEntrance is ReentrancyGuard {
             "EthCrossChainManager crossChain executed error!"
         );
 
-        emit LockEvent(_fromAssetHash, msg.sender, counterpartChainId, _toAssetHash, _toAddress, txData);
+        emit LockEvent(_fromAssetAddress, counterpartChainId, _fromAssetDenom, _toAddress, txData);
     }
 
     function _getCcm() private view returns (ICCM) {
@@ -234,13 +231,12 @@ contract BridgeEntrance is ReentrancyGuard {
         bytes memory buff;
         buff = abi.encodePacked(
             ZeroCopySink.WriteUint255(args.lockType),
-            ZeroCopySink.WriteVarBytes(args.fromAssetHash),
-            ZeroCopySink.WriteVarBytes(args.toAssetHash),
+            ZeroCopySink.WriteVarBytes(args.fromAssetAddress),
+            ZeroCopySink.WriteVarBytes(args.fromAssetDenom),
             ZeroCopySink.WriteVarBytes(args.toAddress),
             ZeroCopySink.WriteUint255(args.amount),
             ZeroCopySink.WriteUint255(args.feeAmount),
             ZeroCopySink.WriteVarBytes(args.feeAddress),
-            ZeroCopySink.WriteVarBytes(args.fromAddress),
             ZeroCopySink.WriteUint255(args.nonce),
             ZeroCopySink.WriteVarBytes(args.toAddressBridge),
             ZeroCopySink.WriteVarBytes(args.toAssetHashBridge)
