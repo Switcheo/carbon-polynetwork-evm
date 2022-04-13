@@ -34,6 +34,7 @@ contract BridgeEntrance is ReentrancyGuard {
 
     // used for cross-chain lock and unlock methods
     struct TransferTxArgs {
+        uint256 lockType;
         bytes fromAssetHash;
         bytes toAssetHash;
         bytes toAddress;
@@ -42,7 +43,6 @@ contract BridgeEntrance is ReentrancyGuard {
         bytes feeAddress;
         bytes fromAddress;
         uint256 nonce;
-        uint256 lockType;
         bytes toAddressBridge;
         bytes toAssetHashBridge;
     }
@@ -161,6 +161,7 @@ contract BridgeEntrance is ReentrancyGuard {
         _validateAssetRegistration(_fromAssetHash, _targetProxyHash, _toAssetHash);
 
         TransferTxArgs memory txArgs = TransferTxArgs({
+            lockType: _uint256Values[0],
             fromAssetHash: Utils.addressToBytes(_fromAssetHash),
             toAssetHash: _toAssetHash,
             toAddress: _toAddress,
@@ -169,7 +170,6 @@ contract BridgeEntrance is ReentrancyGuard {
             feeAddress: _bytesValues[3],
             fromAddress: abi.encodePacked(msg.sender),
             nonce: _getNextNonce(),
-            lockType: _uint256Values[0],
             toAddressBridge: _bytesValues[4],
             toAssetHashBridge: _bytesValues[5]
         });
@@ -233,6 +233,7 @@ contract BridgeEntrance is ReentrancyGuard {
     function _serializeTransferTxArgs(TransferTxArgs memory args) private pure returns (bytes memory) {
         bytes memory buff;
         buff = abi.encodePacked(
+            ZeroCopySink.WriteUint255(args.lockType),
             ZeroCopySink.WriteVarBytes(args.fromAssetHash),
             ZeroCopySink.WriteVarBytes(args.toAssetHash),
             ZeroCopySink.WriteVarBytes(args.toAddress),
@@ -241,7 +242,6 @@ contract BridgeEntrance is ReentrancyGuard {
             ZeroCopySink.WriteVarBytes(args.feeAddress),
             ZeroCopySink.WriteVarBytes(args.fromAddress),
             ZeroCopySink.WriteUint255(args.nonce),
-            ZeroCopySink.WriteUint255(args.lockType),
             ZeroCopySink.WriteVarBytes(args.toAddressBridge),
             ZeroCopySink.WriteVarBytes(args.toAssetHashBridge)
         );
