@@ -37,25 +37,23 @@ contract BridgeEntrance is ReentrancyGuard {
         uint256 lockType;
         bytes fromAssetAddress;
         bytes fromAssetDenom;
+        bytes toAssetDenom;
+        bytes fromAddress;
         bytes toAddress;
         uint256 amount;
-        uint256 feeAmount;
-        bytes feeAddress;
-        uint256 nonce;
-        bytes toAddressBridge;
-        bytes toAssetHashBridge;
+        uint256 withdrawFeeAmount;
+        bytes withdrawFeeAddress;
     }
 
     address public constant ETH_ASSET_HASH = address(0);
 
     ILockProxy public lockProxy;
-    uint256 public currentNonce = 0; // TODO: delete me
 
     event LockEvent(
         address fromAssetAddress,
         uint64 toChainId,
         bytes fromAssetDenom,
-        bytes toAddress,
+        bytes fromAddress,
         bytes txArgs
     );
 
@@ -67,12 +65,12 @@ contract BridgeEntrance is ReentrancyGuard {
     /// @dev Performs a deposit
     /// @param _assetHash the asset to deposit
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo TradeHub
-    /// @param _bytesValues[1]: _toAddress the hex version of the Switcheo TradeHub address to deposit to
+    /// @param _bytesValues[1]: _fromAddress the hex version of the Switcheo TradeHub address to deposit to
     /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo TradeHub
-    /// @param _bytesValues[3]: _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
+    /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo TradeHub address to send the fee to
     /// @param _uint256Values[0]: _lockType: deposit, bridge
     /// @param _uint256Values[1]: amount, the number of tokens to deposit
-    /// @param _uint256Values[2]: feeAmount, the number of tokens to be used as fees
+    /// @param _uint256Values[2]: withdrawFeeAmount, the number of tokens to be used as fees
     /// @param _uint256Values[3]: callAmount, some tokens may burn an amount before transfer
     /// so we allow a callAmount to support these tokens
     function lock(
@@ -86,16 +84,16 @@ contract BridgeEntrance is ReentrancyGuard {
         returns (bool)
     {
         // bytes memory _targetProxyHash = _bytesValues[0];
-        // bytes memory _toAddress = _bytesValues[1];
+        // bytes memory _fromAddress = _bytesValues[1];
         // bytes memory _fromAssetDenom = _bytesValues[2];
-        // bytes memory _feeAddress = _bytesValues[3];
-        // bytes memory _toAddressBridge = _bytesValues[4];
-        // bytes memory _toAssetHashBridge = _bytesValues[5];
+        // bytes memory _withdrawFeeAddress = _bytesValues[3];
+        // bytes memory _toAddress = _bytesValues[4];
+        // bytes memory _toAssetDenom = _bytesValues[5];
 
         // it is very important that this function validates the success of a transfer correctly
         // since, once this line is passed, the deposit is assumed to be successful
         // which will eventually result in the specified amount of tokens being minted for the
-        // _toAddress on Switcheo TradeHub
+        // _fromAddress on Switcheo TradeHub
         _transferIn(_assetHash, _uint256Values[1], _uint256Values[3]);
 
         _lock(_assetHash, _bytesValues, _uint256Values);
@@ -125,12 +123,12 @@ contract BridgeEntrance is ReentrancyGuard {
 
     /// @dev validates the asset registration and calls the CCM contract
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo TradeHub
-    /// @param _bytesValues[1]: _toAddress the hex version of the Switcheo TradeHub address to deposit to
+    /// @param _bytesValues[1]: _fromAddress the hex version of the Switcheo TradeHub address to deposit to
     /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo TradeHub
-    /// @param _bytesValues[3]: _feeAddress the hex version of the Switcheo TradeHub address to send the fee to
+    /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo TradeHub address to send the fee to
     /// @param _uint256Values[0]: _lockType: deposit, bridge
     /// @param _uint256Values[1]: _amount, the number of tokens to deposit
-    /// @param _uint256Values[2]: _feeAmount, the number of tokens to be used as fees
+    /// @param _uint256Values[2]: _withdrawFeeAmount, the number of tokens to be used as fees
     function _lock(
         address _fromAssetAddress,
         bytes[] calldata _bytesValues,
@@ -139,22 +137,22 @@ contract BridgeEntrance is ReentrancyGuard {
         private
     {
         bytes memory _targetProxyHash = _bytesValues[0];
-        bytes memory _toAddress = _bytesValues[1];
+        bytes memory _fromAddress = _bytesValues[1];
         bytes memory _fromAssetDenom = _bytesValues[2];
-        // bytes memory _feeAddress = _bytesValues[3];
-        // bytes memory _toAddressBridge = _bytesValues[4];
-        // bytes memory _toAssetHashBridge = _bytesValues[5];
+        // bytes memory _withdrawFeeAddress = _bytesValues[3];
+        // bytes memory _toAddress = _bytesValues[4];
+        // bytes memory _toAssetDenom = _bytesValues[5];
 
         // uint256 _lockType = _uint256Values[0];
         uint256 _amount = _uint256Values[1];
-        uint256 _feeAmount = _uint256Values[2];
+        uint256 _withdrawFeeAmount = _uint256Values[2];
 
         require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
         require(_fromAssetDenom.length > 0, "Empty fromAssetDenom");
-        require(_toAddress.length > 0, "Empty toAddress");
+        require(_fromAddress.length > 0, "Empty fromAddress");
         // TODO: validations for new params
         require(_amount > 0, "Amount must be more than zero");
-        require(_feeAmount < _amount, "Fee amount cannot be greater than amount");
+        require(_withdrawFeeAmount < _amount, "Fee amount cannot be greater than amount");
 
         _validateAssetRegistration(_fromAssetAddress, _targetProxyHash, _fromAssetDenom);
 
@@ -162,13 +160,12 @@ contract BridgeEntrance is ReentrancyGuard {
             lockType: _uint256Values[0],
             fromAssetAddress: Utils.addressToBytes(_fromAssetAddress),
             fromAssetDenom: _fromAssetDenom,
-            toAddress: _toAddress,
+            toAssetDenom: _bytesValues[5],
+            fromAddress: _fromAddress,
+            toAddress: _bytesValues[4],
             amount: _amount,
-            feeAmount: _feeAmount,
-            feeAddress: _bytesValues[3],
-            nonce: _getNextNonce(),
-            toAddressBridge: _bytesValues[4],
-            toAssetHashBridge: _bytesValues[5]
+            withdrawFeeAmount: _withdrawFeeAmount,
+            withdrawFeeAddress: _bytesValues[3]
         });
 
         bytes memory txData = _serializeTransferTxArgs(txArgs);
@@ -179,18 +176,13 @@ contract BridgeEntrance is ReentrancyGuard {
             "EthCrossChainManager crossChain executed error!"
         );
 
-        emit LockEvent(_fromAssetAddress, counterpartChainId, _fromAssetDenom, _toAddress, txData);
+        emit LockEvent(_fromAssetAddress, counterpartChainId, _fromAssetDenom, _fromAddress, txData);
     }
 
     function _getCcm() private view returns (ICCM) {
       ICCMProxy ccmProxy = lockProxy.ccmProxy();
       ICCM ccm = ICCM(ccmProxy.getEthCrossChainManager());
       return ccm;
-    }
-
-    function _getNextNonce() private returns (uint256) {
-      currentNonce = currentNonce.add(1);
-      return currentNonce;
     }
 
     /// @dev transfers funds from an address into this contract
@@ -233,13 +225,12 @@ contract BridgeEntrance is ReentrancyGuard {
             ZeroCopySink.WriteUint255(args.lockType),
             ZeroCopySink.WriteVarBytes(args.fromAssetAddress),
             ZeroCopySink.WriteVarBytes(args.fromAssetDenom),
+            ZeroCopySink.WriteVarBytes(args.toAssetDenom),
+            ZeroCopySink.WriteVarBytes(args.fromAddress),
             ZeroCopySink.WriteVarBytes(args.toAddress),
             ZeroCopySink.WriteUint255(args.amount),
-            ZeroCopySink.WriteUint255(args.feeAmount),
-            ZeroCopySink.WriteVarBytes(args.feeAddress),
-            ZeroCopySink.WriteUint255(args.nonce),
-            ZeroCopySink.WriteVarBytes(args.toAddressBridge),
-            ZeroCopySink.WriteVarBytes(args.toAssetHashBridge)
+            ZeroCopySink.WriteUint255(args.withdrawFeeAmount),
+            ZeroCopySink.WriteVarBytes(args.withdrawFeeAddress)
         );
         return buff;
     }
