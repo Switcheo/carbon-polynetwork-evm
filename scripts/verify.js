@@ -4,11 +4,11 @@ hre.web3 = new Web3(hre.network.provider)
 
 
 async function main() {
-  const counterpartChainId = 214
+  const counterpartChainId = 216
   // update addresses!!!
-  const ccmProxyAddress = '0xb6cAd9baf43f780407F8e637Cd575a1c619f414c'
-  const lockProxyAddress = '0x26a12a0349EEa0816ccaA7FdaBA16BB8325dDEbD'
-  const bridgeEntranceAddress = '0x9B3300A8126b3e4cC316B5280e5e6497538822bf'
+  const ccmProxyAddress = '0x2e3b36411abEE54Ee16999156336eF920c46C38a'
+  const lockProxyAddress = '0xD0EB96dC8B984452a40F701e650Fc5011D4236dd'
+  const bridgeEntranceAddress = '0x22bf293E7CB485662CcA0cd05044F4B59c2b14e6'
 
   const LockProxy = await hre.ethers.getContractFactory('LockProxy')
   const lockProxy = await LockProxy.attach(lockProxyAddress)

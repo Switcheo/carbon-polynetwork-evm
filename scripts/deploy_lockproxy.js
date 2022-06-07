@@ -13,8 +13,8 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile')
 
-  const counterpartChainId = 214
-  const ccmProxyAddress = '0xb6cAd9baf43f780407F8e637Cd575a1c619f414c'
+  const counterpartChainId = 216
+  const ccmProxyAddress = '0x2e3b36411abEE54Ee16999156336eF920c46C38a'
 
   // We get the contract to deploy
   const LockProxy = await hre.ethers.getContractFactory('LockProxy')

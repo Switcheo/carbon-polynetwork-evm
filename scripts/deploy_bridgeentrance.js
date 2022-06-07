@@ -13,7 +13,7 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile')
 
-  const lockProxyAddress = '0x26a12a0349EEa0816ccaA7FdaBA16BB8325dDEbD'
+  const lockProxyAddress = '0xD0EB96dC8B984452a40F701e650Fc5011D4236dd'
 
   // We get the contract to deploy
   const BridgeEntrance = await hre.ethers.getContractFactory('BridgeEntrance')
