@@ -1,5 +1,5 @@
 const { web3, getJrc, getLockProxy, getCcm, assertAsync, assertReversion } = require('../utils')
-const { ETH_ASSET_HASH } = require('../constants')
+const { ETH_ADDRESS } = require('../constants')
 
 const { LOCAL_COUNTERPART_CHAIN_ID } = require('../constants')
 
@@ -24,11 +24,11 @@ contract('Test lock', async (accounts) => {
     contract('when parameters are valid', async () => {
         it('sends eth to the LockProxy', async () => {
             const amount = web3.utils.toWei('0.2', 'ether')
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, targetProxyHash, toAssetHash, chainId)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, targetProxyHash, toAssetHash, chainId)
             await assertAsync(web3.eth.getBalance(proxy.address), '0')
 
             await proxy.lock(
-                ETH_ASSET_HASH,
+                ETH_ADDRESS,
                 targetProxyHash,
                 swthAddress,
                 toAssetHash,
@@ -72,7 +72,7 @@ contract('Test lock', async (accounts) => {
             await assertAsync(web3.eth.getBalance(proxy.address), '0')
 
             await assertReversion(proxy.lock(
-                ETH_ASSET_HASH,
+                ETH_ADDRESS,
                 targetProxyHash,
                 swthAddress,
                 toAssetHash,
@@ -88,11 +88,11 @@ contract('Test lock', async (accounts) => {
     contract('if the amount of ETH transferred does not match the expected amount', async () => {
         it('raises an error', async () => {
             const amount = web3.utils.toWei('0.2', 'ether')
-            await ccm.registerAsset(proxy.address, ETH_ASSET_HASH, targetProxyHash, toAssetHash, chainId)
+            await ccm.registerAsset(proxy.address, ETH_ADDRESS, targetProxyHash, toAssetHash, chainId)
             await assertAsync(web3.eth.getBalance(proxy.address), '0')
 
             await assertReversion(proxy.lock(
-                ETH_ASSET_HASH,
+                ETH_ADDRESS,
                 targetProxyHash,
                 swthAddress,
                 toAssetHash,
@@ -228,7 +228,7 @@ contract('Test lock', async (accounts) => {
                 feeAddress,
                 [amount, '201', '200'],
                 { from: user }
-            ), 'Fee amount cannot be greater than amount')
+            ), 'Fee amount must be less than amount')
 
             await assertAsync(jrc.balanceOf(proxy.address), '0')
         })

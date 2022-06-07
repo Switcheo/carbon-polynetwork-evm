@@ -1,6 +1,6 @@
-# Switcheo Chain Ethereum Contract
+# Carbon - EVM Contracts
 
-This is the repo for the Switcheo Chain ETH contracts.
+This repository contains the Ethereum (and all EVM-compatible chain) deposit and wrapped native token (SWTH) contracts for Carbon via the Polynetwork bridge.
 
 ## Setup
 
@@ -11,17 +11,23 @@ This is the repo for the Switcheo Chain ETH contracts.
 npm install -g truffle@5.1.5
 ```
 2. Install [Ganache-CLI ^6.9.1](https://github.com/trufflesuite/ganache-cli)
-```
-npm install -g ganache-cli
-```
+
+    ```bash
+    npm install -g ganache-cli
+    ```
+
 3. Install [Solhint ^2.1.0](https://github.com/protofire/solhint)
-```
-npm install -g solhint
-```
+
+    ```bash
+    npm install -g solhint
+    ```
+
 4. Run Ganache-CLI with:
-```
-ganache-cli -m "ladder soft balcony kiwi sword shadow volcano reform cricket wall initial normal" -p 7545 -l 8000000
-```
+
+    ```bash
+    ganache-cli -m "ladder soft balcony kiwi sword shadow volcano reform cricket wall initial normal" -p 7545 -l 8000000
+    ```
+
 5. Install node modules with `npm install`
 6. Run `truffle migrate` to deploy the contracts to Ganache
 7. Run `truffle test` to run test files
@@ -29,7 +35,7 @@ ganache-cli -m "ladder soft balcony kiwi sword shadow volcano reform cricket wal
 
 ## LockProxy
 
-The LockProxy contract at `contracts/LockProxy.sol` is a variation of https://github.com/polynetwork/eth-contracts/blob/master/contracts/core/lock_proxy/LockProxy.sol, and is intended to interact with the CCM (CrossChainManager) contract of the [PolyNetwork](https://www.poly.network/).
+The LockProxy contract at `contracts/LockProxy.sol` is a variation of PolyNetwork's [LockProxy](https://github.com/polynetwork/eth-contracts/blob/master/contracts/core/lock_proxy/LockProxy.sol), and is intended to interact with the CCM (CrossChainManager) contract of the [PolyNetwork](https://www.poly.network/).
 
 The main purpose of the contract is to facilitate deposits and withdrawals into Switcheo TradeHub, which can be considered to be a side-chain.
 
@@ -65,7 +71,7 @@ However, this structure would be more complicated, and if a new "LockProxy" is r
 
 Withdrawals are initiated on Switcheo TradeHub, and would result in the `LockProxy.unlock` function being called by the CCM contract, the funds would then be transferred to the specified withdrawal address.
 
-To send ETH, `call` is used instead of `transfer`. This follows the recommendation from https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/, since the withdrawal address could be a contract.
+To send ETH, `call` is used instead of `transfer`. This follows the recommendation from [this report](https://diligence.consensys.net/blog/2019/09/stop-using-soliditys-transfer-now/), since the withdrawal address could be a contract.
 
 ## Extensions
 
@@ -78,23 +84,25 @@ Extensions can be removed by the `removeExtension` method, also callable through
 
 ## Addresses
 
-Devnet LockProxy (Ropsten): 0x7404752ac021940d0c85a25ce2e3aadce9325292
+### Ethereum
+
+Devnet LockProxy (Ropsten): 0x91F453851E297524749a740D53Cf54A89231487c
+
 Mainnet LockProxy: 0x9a016ce184a22dbf6c17daa59eb7d3140dbd1c54
 
 
 ## Redeploy to devnet
 
-Update `4_deploy_lock_proxy.js`, ccmProxyAddress and counterpartChainId when necessary.
+Update `scripts/deploy_lockproxy.js`, ccmProxyAddress and counterpartChainId when necessary.
 
 ```bash
-# skips initial migration and deploy from 2_ onwards
-truffle migrate --network ropsten -f 2
+npx hardhat run scripts/deploy_lockproxy.js
 ```
-
-WIP: `npx hardhat run scripts/deploy_lockproxy.js`
 
 ## Verify contract
 
+Update addresses to verify
+
 ```bash
-truffle run verify LockProxy@0x399b3801407859b2291F6b8B2133C168088b8e1e --network ropsten
+npx hardhat run scripts/verify.js
 ```

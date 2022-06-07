@@ -49,11 +49,50 @@ module.exports = {
                 const PrivateKeyProvider = require('truffle-privatekey-provider')
                 return new PrivateKeyProvider(
                     process.env.controlKey,
-                    'https://mainnet.infura.io/v3/' + process.env.infuraKey
+                    'https://eth-mainnet.alchemyapi.io/v2/' + process.env.alchemyKey
                 )
             },
             network_id: 1,
             gasPrice: 20 * 1000000000
+        },
+        bsctestnet: {
+            provider: function() {
+                const PrivateKeyProvider = require('truffle-privatekey-provider')
+                return new PrivateKeyProvider(
+                    process.env.controlKey,
+                    `https://data-seed-prebsc-1-s1.binance.org:8545/`
+                )
+            },
+            network_id: 97,
+            confirmations: 3,
+            timeoutBlocks: 200,
+            skipDryRun: true
+        },
+        bscmainnet: {
+            provider: function() {
+                const PrivateKeyProvider = require('truffle-privatekey-provider')
+                return new PrivateKeyProvider(
+                    process.env.controlKey,
+                    `https://bsc-dataseed.binance.org/`
+                )
+            },
+            network_id: 56,
+            confirmations: 5,
+            timeoutBlocks: 200,
+            skipDryRun: true
+        },
+        hecomainnet: {
+            provider: function() {
+                const PrivateKeyProvider = require('truffle-privatekey-provider')
+                return new PrivateKeyProvider(
+                    process.env.controlKey,
+                    `https://http-mainnet.hecochain.com/`
+                )
+            },
+            network_id: 128,
+            confirmations: 5,
+            timeoutBlocks: 200,
+            skipDryRun: true
         }
     },
     compilers: {

@@ -1,6 +1,6 @@
 const { getLockProxy, getCcm, getJrc, assertAsync, assertReversion } = require('../utils')
 
-const { LOCAL_COUNTERPART_CHAIN_ID, ETH_ASSET_HASH } = require('../constants')
+const { LOCAL_COUNTERPART_CHAIN_ID, ETH_ADDRESS } = require('../constants')
 
 contract('Test extensionTransfer', async (accounts) => {
     let proxy
@@ -28,7 +28,7 @@ contract('Test extensionTransfer', async (accounts) => {
             await assertAsync(web3.eth.getBalance(proxy.address), amount)
             await assertAsync(web3.eth.getBalance(receiver), '0')
 
-            await proxy.extensionTransfer(receiver, ETH_ASSET_HASH, amount)
+            await proxy.extensionTransfer(receiver, ETH_ADDRESS, amount)
 
             await assertAsync(web3.eth.getBalance(proxy.address), '0')
             await assertAsync(web3.eth.getBalance(receiver), amount)
@@ -71,7 +71,7 @@ contract('Test extensionTransfer', async (accounts) => {
             await assertAsync(web3.eth.getBalance(receiver), '0')
 
             await assertReversion(
-                proxy.extensionTransfer(receiver, ETH_ASSET_HASH, amount),
+                proxy.extensionTransfer(receiver, ETH_ADDRESS, amount),
                 'Invalid extension'
             )
 
