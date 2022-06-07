@@ -86,7 +86,7 @@ Extensions can be removed by the `removeExtension` method, also callable through
 
 ### Ethereum
 
-Devnet LockProxy (Ropsten): 0x91F453851E297524749a740D53Cf54A89231487c
+Devnet LockProxy (Rinkeby): check telegram chat
 
 Mainnet LockProxy: 0x9a016ce184a22dbf6c17daa59eb7d3140dbd1c54
 
@@ -97,6 +97,12 @@ Update `scripts/deploy_lockproxy.js`, ccmProxyAddress and counterpartChainId whe
 
 ```bash
 npx hardhat run scripts/deploy_lockproxy.js
+```
+
+Update `scripts/deploy_bridgeentrance.js`, lockProxyAddress when necessary.
+
+```bash
+npx hardhat run scripts/deploy_bridgeentrance.js
 ```
 
 ## Verify contract
