@@ -6,12 +6,10 @@ This repository contains the Ethereum (and all EVM-compatible chain) deposit and
 
 - **Ensure you're using node v12, it does not work with node v14**
 
-1. Install [Truffle ^5.1.2](https://github.com/trufflesuite/truffle)
-
-    ```bash
-    npm install -g truffle@5.1.2
-    ```
-
+1. Install [Truffle ~5.1.5](https://github.com/trufflesuite/truffle)
+```
+npm install -g truffle@5.1.5
+```
 2. Install [Ganache-CLI ^6.9.1](https://github.com/trufflesuite/ganache-cli)
 
     ```bash
@@ -92,28 +90,19 @@ Devnet LockProxy (Ropsten): 0x91F453851E297524749a740D53Cf54A89231487c
 
 Mainnet LockProxy: 0x9a016ce184a22dbf6c17daa59eb7d3140dbd1c54
 
-Switcheo Token: 0xB4371dA53140417CBb3362055374B10D97e420bB
 
-### Binance Smart Chain (BSC)
+## Redeploy to devnet
 
-Devnet LockProxy (Binance TestNet): -
-
-Mainnet LockProxy: 0xb5d4f343412dc8efb6ff599d790074d0f1e8d430
-
-Switcheo Token: 0x250b211ee44459dad5cd3bca803dd6a7ecb5d46c
-
-### Huobi EcoChain (Heco)
-
-Switcheo Token: 0x14127C943752d265B21D6963F8576A05c5c8e59c
-
-## Misc
-
-**Verifying token contract on Etherscan, BSCScan etc.**
-
-Quickly verify contract on explorer by using [truffle-plugin-verify](https://github.com/rkalis/truffle-plugin-verify)
-
-E.g. for hecoinfo:
+Update `scripts/deploy_lockproxy.js`, ccmProxyAddress and counterpartChainId when necessary.
 
 ```bash
-verifyAPIKey=<YOUR_KEY> npx truffle run etherscan ContractName --network hecomainnet --debug
+npx hardhat run scripts/deploy_lockproxy.js
+```
+
+## Verify contract
+
+Update addresses to verify
+
+```bash
+npx hardhat run scripts/verify.js
 ```
