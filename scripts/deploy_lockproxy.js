@@ -16,12 +16,18 @@ async function main() {
   const counterpartChainId = 216
   const ccmProxyAddress = '0x2e3b36411abEE54Ee16999156336eF920c46C38a'
 
+  const SwitcheoToken = await hre.ethers.getContractFactory('SwitcheoTokenBSC')
+  const switcheoToken = await SwitcheoToken.deploy()
+
+  await switcheoToken.deployed()
+
   // We get the contract to deploy
   const LockProxy = await hre.ethers.getContractFactory('LockProxy')
-  const lockProxy = await LockProxy.deploy(ccmProxyAddress, counterpartChainId)
+  const lockProxy = await LockProxy.deploy(switcheoToken.address, ccmProxyAddress, counterpartChainId)
 
   await lockProxy.deployed()
 
+  console.log('SwitcheoToken deployed to:', switcheoToken.address)
   console.log('LockProxy deployed to:', lockProxy.address)
 }
 
