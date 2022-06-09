@@ -13,22 +13,13 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile')
 
-  const counterpartChainId = 216
-  const ccmProxyAddress = '0x2e3b36411abEE54Ee16999156336eF920c46C38a'
-
-  const SwitcheoToken = await hre.ethers.getContractFactory('SwitcheoTokenBSC')
-  const switcheoToken = await SwitcheoToken.deploy()
-
-  await switcheoToken.deployed()
-
   // We get the contract to deploy
-  const LockProxy = await hre.ethers.getContractFactory('LockProxy')
-  const lockProxy = await LockProxy.deploy(switcheoToken.address, ccmProxyAddress, counterpartChainId)
+  const SWCoin = await hre.ethers.getContractFactory('SWCoin')
+  const swCoin = await SWCoin.deploy('SWC5')
 
-  await lockProxy.deployed()
+  await swCoin.deployed()
 
-  console.log('SwitcheoToken deployed to:', switcheoToken.address)
-  console.log('LockProxy deployed to:', lockProxy.address)
+  console.log('SWCoin deployed to:', swCoin.address)
 }
 
 // We recommend this pattern to be able to use async/await everywhere
