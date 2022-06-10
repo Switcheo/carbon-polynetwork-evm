@@ -13,7 +13,15 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile')
 
-  const lockProxyAddress = '0xD0EB96dC8B984452a40F701e650Fc5011D4236dd'
+  const network = hre.network.name
+
+  let lockProxyAddress
+
+  if (network === 'rinkeby') {
+    lockProxyAddress = '0xFE5C9832b62bFfFFfD1B091de457254dab344C04'
+  } else {
+    throw new Error(`unable to set lockProxyAddress for ${network}`)
+  }
 
   // We get the contract to deploy
   const BridgeEntrance = await hre.ethers.getContractFactory('BridgeEntrance')
