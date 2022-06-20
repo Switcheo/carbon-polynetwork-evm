@@ -112,3 +112,9 @@ Update addresses to verify
 ```bash
 npx hardhat run scripts/verify.js
 ```
+
+## Get wallet byte code hash
+
+```bash
+npx hardhat run scripts/getwalletbytecodehash.js
+```
