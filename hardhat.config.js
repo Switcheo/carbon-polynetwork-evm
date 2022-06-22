@@ -58,8 +58,8 @@ module.exports = {
       accounts: [],
     },
     bsc: {
-      url: `http://172.168.3.40:8545`,
-      accounts: [],
+      url: `https://bsc-dataseed1.defibit.io/`,
+      accounts: [process.env.controlKey],
     },
     heco: {
       url: `https://http-mainnet.hecochain.com`,
