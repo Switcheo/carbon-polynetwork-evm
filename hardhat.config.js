@@ -50,8 +50,8 @@ module.exports = {
     hardhat: {
     },
     mainnet: {
-      url: `https://mainnet.infura.io/v3/f7fd127c230e49b292bafd6c338995ea`,
-      accounts: [],
+      url: `https://mainnet.infura.io/v3/7cf21eaee93b49529f4da0ba7cf211af`,
+      accounts: [process.env.controlKey],
     },
     arbitrum: {
       url: `https://arb1.arbitrum.io/rpc`,
