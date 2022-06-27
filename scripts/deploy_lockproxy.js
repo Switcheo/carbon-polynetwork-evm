@@ -13,8 +13,8 @@ async function main() {
   // manually to make sure everything is compiled
   // await hre.run('compile')
 
-  const counterpartChainId = 217
-  const ccmProxyAddress = '0x26F5Ab48659f54E6231534E58ea0cb8c68e4ae29'
+  const counterpartChainId = 219
+  const ccmProxyAddress = '0xD39aFa1d7D7E2420F034C384AE7aCC4DB2F496d1'
 
   const SwitcheoToken = await hre.ethers.getContractFactory('SwitcheoTokenBSC')
   const switcheoToken = await SwitcheoToken.deploy()

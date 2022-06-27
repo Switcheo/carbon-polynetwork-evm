@@ -18,7 +18,11 @@ async function main() {
   let lockProxyAddress
 
   if (network === 'rinkeby') {
-    lockProxyAddress = '0xFE5C9832b62bFfFFfD1B091de457254dab344C04'
+    lockProxyAddress = '0x7F7317167e90afa38972e46b031Bb4da0B1f6f73'
+  } else if (network === 'bsc') {
+    lockProxyAddress = '0xb5D4f343412dC8efb6ff599d790074D0f1e8D430'
+  } else if (network === 'mainnet') {
+    lockProxyAddress = '0x9a016ce184a22dbf6c17daa59eb7d3140dbd1c54'
   } else {
     throw new Error(`unable to set lockProxyAddress for ${network}`)
   }

@@ -4,12 +4,12 @@ hre.web3 = new Web3(hre.network.provider)
 
 
 async function main() {
-  const counterpartChainId = 216
-  // update addresses!!!
-  const swthAddress = '0x32e125258b7db0a0dffde5bd03b2b859253538ab'
-  const ccmProxyAddress = '0x6564BAd8ab4967EA48bef7bF224801E92DBb6Be9'
-  const lockProxyAddress = '0xFE5C9832b62bFfFFfD1B091de457254dab344C04'
-  const bridgeEntranceAddress = '0x1fFf3678De3b2e250eccB214078902DcEe08748B'
+  // update chainid/addresses!!!
+  const counterpartChainId = 219
+  const swthAddress = '0xb823F200b918961Ca498DC60cdfaa3A665c26135'
+  const ccmProxyAddress = '0xD39aFa1d7D7E2420F034C384AE7aCC4DB2F496d1'
+  const lockProxyAddress = '0x7F7317167e90afa38972e46b031Bb4da0B1f6f73'
+  const bridgeEntranceAddress = '0xd942Ba20A58543878335108aAC8C811F1f92fa33'
 
   const LockProxy = await hre.ethers.getContractFactory('LockProxy')
   const lockProxy = await LockProxy.attach(lockProxyAddress)
@@ -35,17 +35,17 @@ async function main() {
     console.log(err)
   }
 
-  try {
-    // tries to verify ccmnowhitelist
-    await hre.run('verify:verify', {
-      address: bridgeEntrance.address,
-      constructorArguments: [
-        lockProxyAddress,
-      ],
-    })
-  } catch (err) {
-    console.log(err)
-  }
+  // try {
+  //   // tries to verify ccmnowhitelist
+  //   await hre.run('verify:verify', {
+  //     address: bridgeEntrance.address,
+  //     constructorArguments: [
+  //       lockProxyAddress,
+  //     ],
+  //   })
+  // } catch (err) {
+  //   console.log(err)
+  // }
 
   console.log('done')
 
