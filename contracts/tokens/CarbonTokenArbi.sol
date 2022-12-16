@@ -8,9 +8,7 @@ import "./CarbonWrappedERC20.sol";
 /**
 * @title CarbonTokenArbi - Carbon Token for Arbitrum
 *
-* @dev Standard ERC20 that mints / burns to the PoS lockProxy
-* contract.
-* https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
+* @dev Carbon Token (SWTH)
 */
 contract CarbonTokenArbi is CarbonWrappedERC20, ERC20Detailed {
   constructor(address lockProxyAddress) 
