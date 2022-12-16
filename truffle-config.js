@@ -1,4 +1,5 @@
 require('dotenv').config()
+const HDWalletProvider = require("@truffle/hdwallet-provider");
 
 // See http://truffleframework.com/docs/advanced/configuration for more details
 module.exports = {
@@ -16,10 +17,21 @@ module.exports = {
             port: 8545,
             network_id: '*' // Match any network id
         },
+        goerli: {
+            provider: function() {
+                return new HDWalletProvider(
+                    process.env.controlKey,
+                    'https://eth-goerli.g.alchemy.com/v2/Rog1kuZQf1R8X7EAmsXs7oFyQXyzIH-4'
+                )
+            },
+            network_id: 5,
+            confirmations: 1,
+            timeoutBlocks: 200,
+            skipDryRun: true
+        },
         ropsten: {
             provider: function() {
-                const PrivateKeyProvider = require('truffle-privatekey-provider')
-                return new PrivateKeyProvider(
+                return new HDWalletProvider(
                     process.env.controlKey,
                     'https://ropsten.infura.io/v3/9bca539684b6408d9dbcbb179e593eab'
                 )
@@ -33,8 +45,7 @@ module.exports = {
         },
         rinkeby: {
             provider: function() {
-                const PrivateKeyProvider = require('truffle-privatekey-provider')
-                return new PrivateKeyProvider(
+                return new HDWalletProvider(
                     process.env.controlKey,
                     'https://rinkeby.infura.io/v3/7cf21eaee93b49529f4da0ba7cf211af'
                 )
@@ -46,8 +57,7 @@ module.exports = {
         },
         mainnet: {
             provider: function() {
-                const PrivateKeyProvider = require('truffle-privatekey-provider')
-                return new PrivateKeyProvider(
+                return new HDWalletProvider(
                     process.env.controlKey,
                     'https://eth-mainnet.alchemyapi.io/v2/' + process.env.alchemyKey
                 )
@@ -57,8 +67,7 @@ module.exports = {
         },
         bsctestnet: {
             provider: function() {
-                const PrivateKeyProvider = require('truffle-privatekey-provider')
-                return new PrivateKeyProvider(
+                return new HDWalletProvider(
                     process.env.controlKey,
                     `https://data-seed-prebsc-1-s1.binance.org:8545/`
                 )
@@ -70,8 +79,7 @@ module.exports = {
         },
         bscmainnet: {
             provider: function() {
-                const PrivateKeyProvider = require('truffle-privatekey-provider')
-                return new PrivateKeyProvider(
+                return new HDWalletProvider(
                     process.env.controlKey,
                     `https://bsc-dataseed.binance.org/`
                 )
@@ -83,8 +91,7 @@ module.exports = {
         },
         hecomainnet: {
             provider: function() {
-                const PrivateKeyProvider = require('truffle-privatekey-provider')
-                return new PrivateKeyProvider(
+                return new HDWalletProvider(
                     process.env.controlKey,
                     `https://http-mainnet.hecochain.com/`
                 )
@@ -97,7 +104,7 @@ module.exports = {
     },
     compilers: {
         solc: {
-            version: '0.6.12',
+            version: 'pragma',
             settings: {
                 optimizer: {
                     enabled: true,

@@ -52,7 +52,6 @@ contract LockProxy is ReentrancyGuard {
     bytes public constant SALT_PREFIX = "switcheo-eth-wallet-factory-v1";
     address public constant ETH_ADDRESS = address(0);
 
-    address public immutable swthToken;
     CCMProxy public immutable ccmProxy;
     uint64 public immutable counterpartChainId;
 
@@ -87,11 +86,9 @@ contract LockProxy is ReentrancyGuard {
         bytes txArgs
     );
 
-    constructor(address _swthToken, address _ccmProxyAddress, uint64 _counterpartChainId) public {
+    constructor(address _ccmProxyAddress, uint64 _counterpartChainId) public {
         require(_counterpartChainId > 0, "counterpartChainId cannot be zero");
         require(_ccmProxyAddress != address(0), "ccmProxyAddress cannot be empty");
-        require(_swthToken != address(0), "swthToken cannot be empty");
-        swthToken = _swthToken;
         counterpartChainId = _counterpartChainId;
         ccmProxy = CCMProxy(_ccmProxyAddress);
     }
@@ -580,7 +577,7 @@ contract LockProxy is ReentrancyGuard {
         wallet.sendERC20ToCreator(_tokenAddress, _callAmount);
 
         uint256 transferred = token.balanceOf(address(this)).sub(before);
-        require(transferred == _amount || _tokenAddress == swthToken, "Tokens transferred does not match the expected amount");
+        require(transferred == _amount, "Tokens transferred does not match the expected amount");
     }
 
     /// @dev transfers funds from an address into this contract
@@ -612,7 +609,7 @@ contract LockProxy is ReentrancyGuard {
             )
         );
         uint256 transferred = token.balanceOf(address(this)).sub(before);
-        require(transferred == _amount || _tokenAddress == swthToken, "Tokens transferred does not match the expected amount");
+        require(transferred == _amount, "Tokens transferred does not match the expected amount");
     }
 
     /// @dev transfers funds from this contract to the _toAddress
