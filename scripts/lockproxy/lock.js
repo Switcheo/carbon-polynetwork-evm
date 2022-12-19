@@ -2,9 +2,9 @@ require("dotenv").config();
 
 const truffleConfig = require("../../truffle-config.js");
 const tokenBuildInfo = require("../../build/contracts/CarbonTokenArbi.json");
-const ccmBuildInfo = require("../../build/contracts/CCMMock.json");
 const lockProxyBuildInfo = require("../../build/contracts/LockProxy.json");
 const { getContractFromBuild, loadTruffleNetwork, getProviderFromNetwork } = require("../utils.js");
+const { ethers } = require("ethers");
 
 const networkConfig = loadTruffleNetwork(truffleConfig);
 const { wallet, provider } = getProviderFromNetwork(networkConfig);

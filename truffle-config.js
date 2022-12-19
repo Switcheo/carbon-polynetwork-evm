@@ -21,7 +21,7 @@ module.exports = {
             provider: function() {
                 return new HDWalletProvider(
                     process.env.controlKey,
-                    'https://eth-goerli.g.alchemy.com/v2/Rog1kuZQf1R8X7EAmsXs7oFyQXyzIH-4'
+                    'https://eth-goerli.g.alchemy.com/v2/' + process.env.alchemyKey
                 )
             },
             network_id: 5,
