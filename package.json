@@ -1,4 +1,5 @@
 {
+  "version": "1.0.1",
   "dependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",

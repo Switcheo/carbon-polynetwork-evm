@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity 0.6.12;
+pragma solidity 0.8.17;
 
 import "../libs/token/ERC20/ERC20Detailed.sol";
 import "./CarbonWrappedERC20.sol";

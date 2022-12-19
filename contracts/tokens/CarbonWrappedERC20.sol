@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-pragma solidity 0.6.12;
-
-import "../libs/token/ERC20/IERC20.sol";
-import "../libs/token/ERC20/ERC20.sol";
-import "../libs/token/ERC20/ERC20Detailed.sol";
-import "../libs/ownership/Ownable.sol";
-import "../libs/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /**
 * @title CarbonWrappedERC20 - Carbon Wrapped ERC20 Token
@@ -23,7 +21,7 @@ abstract contract CarbonWrappedERC20 is ERC20, Ownable {
     */
   address public lockProxyAddress;
 
-  constructor(address _lockProxyAddress) public {
+  constructor(address _lockProxyAddress) {
     lockProxyAddress = _lockProxyAddress;
   }
 
