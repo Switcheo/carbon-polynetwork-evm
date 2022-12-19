@@ -11,6 +11,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 *
 * @dev Standard ERC20 that mints / burns when unlock / lock with PoS
 * LockProxy contract.
+* @dev NOTE ERC20 sets token decimals to 18 by default. Update it by
+* overriding the {decimals} function. It should be the same number as
+* the decimals on source chain.
+* 
 * https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md
 */
 abstract contract CarbonWrappedERC20 is ERC20, Ownable {
@@ -21,7 +25,9 @@ abstract contract CarbonWrappedERC20 is ERC20, Ownable {
     */
   address public lockProxyAddress;
 
-  constructor(address _lockProxyAddress) {
+  constructor(address _lockProxyAddress, string memory _name, string memory _symbol) 
+  ERC20(_name, _symbol)
+  {
     lockProxyAddress = _lockProxyAddress;
   }
 
