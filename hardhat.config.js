@@ -2,8 +2,8 @@ require('dotenv').config()
 
 require('@nomiclabs/hardhat-etherscan')
 require('@nomiclabs/hardhat-waffle')
-//require('hardhat-gas-reporter')
-//require('solidity-coverage')
+// require('hardhat-gas-reporter')
+// require('solidity-coverage')
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -15,9 +15,6 @@ task('accounts', 'Prints the list of accounts', async (taskArgs, hre) => {
   }
 })
 
-let PRIVATE_KEY = ''
-let PRIVATE_KEY_1 = ''
-let ETHERSCAN_API_KEY = ''
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
@@ -51,7 +48,7 @@ module.exports = {
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/7cf21eaee93b49529f4da0ba7cf211af`,
-      accounts: [process.env.controlKey],
+      accounts: [process.env.controlKey,],
     },
     arbitrum: {
       url: `https://arb1.arbitrum.io/rpc`,
@@ -59,7 +56,7 @@ module.exports = {
     },
     bsc: {
       url: `https://bsc-dataseed1.defibit.io/`,
-      accounts: [process.env.controlKey],
+      accounts: [process.env.controlKey,],
     },
     heco: {
       url: `https://http-mainnet.hecochain.com`,
@@ -73,15 +70,25 @@ module.exports = {
       url: `https://rpc-mainnet.matic.network`,
       accounts: [],
     },
-
-
+    goerli: {
+      url: `https://eth-goerli.g.alchemy.com/v2/Rog1kuZQf1R8X7EAmsXs7oFyQXyzIH-4`,
+      accounts: [process.env.controlKey,],
+    },
+    polygon_testnet: {
+      url: 'https://matic-mumbai.chainstacklabs.com/',
+      accounts: [process.env.controlKey,],
+    },
+    polygon: {
+      url: 'https://1rpc.io/matic',
+      accounts: [process.env.controlKey,],
+    },
     ropsten: {
       url: `https://ropsten.infura.io/v3/9bca539684b6408d9dbcbb179e593eab`,
-      accounts: [process.env.controlKey],
+      accounts: [process.env.controlKey,],
     },
     rinkeby: {
       url: `https://rinkeby.infura.io/v3/7cf21eaee93b49529f4da0ba7cf211af`,
-      accounts: [process.env.controlKey],
+      accounts: [process.env.controlKey,],
     },
     arbitrum_testnet: {
       url: `https://rinkeby.arbitrum.io/rpc`,
@@ -114,6 +121,6 @@ module.exports = {
     currency: 'USD',
   },
   etherscan: {
-    apiKey: process.env.etherscanApiKey,
+    apiKey: process.env.polygonscanVerifyAPIKey,
   },
 }

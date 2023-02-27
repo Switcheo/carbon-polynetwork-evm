@@ -4,18 +4,17 @@ hre.web3 = new Web3(hre.network.provider)
 
 
 async function main() {
-  const counterpartChainId = 216
+  const counterpartChainId = 5
   // update addresses!!!
-  const swthAddress = '0x32e125258b7db0a0dffde5bd03b2b859253538ab'
-  const ccmProxyAddress = '0x6564BAd8ab4967EA48bef7bF224801E92DBb6Be9'
-  const lockProxyAddress = '0x9a016ce184a22dbf6c17daa59eb7d3140dbd1c54'
-  const bridgeEntranceAddress = '0x93fD29fF3B662c9e5e15681bb3B139D6CE2Ca9C5'
+  const ccmProxyAddress = '0x5366ea2b5b729ff3cef404c2408c8c60cc061b71'
+  const lockProxyAddress = '0xF763fa322Dc58dEe588252fAFee5f448e863b633'
+  const bridgeEntranceAddress = '0x192C14B22B651B1f85e98704D20A7E326369Fa54'
 
   const LockProxy = await hre.ethers.getContractFactory('LockProxy')
-  const lockProxy = await LockProxy.attach(lockProxyAddress)
+  const lockProxy = LockProxy.attach(lockProxyAddress)
 
   const BridgeEntrance = await hre.ethers.getContractFactory('BridgeEntrance')
-  const bridgeEntrance = await BridgeEntrance.attach(bridgeEntranceAddress)
+  const bridgeEntrance = BridgeEntrance.attach(bridgeEntranceAddress)
 
   console.log('verifying!')
   console.log(lockProxy.address)
@@ -26,7 +25,6 @@ async function main() {
     await hre.run('verify:verify', {
       address: lockProxy.address,
       constructorArguments: [
-        swthAddress,
         ccmProxyAddress,
         counterpartChainId,
       ],
@@ -48,7 +46,6 @@ async function main() {
   }
 
   console.log('done')
-
 }
 
 

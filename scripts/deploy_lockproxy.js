@@ -12,22 +12,18 @@ async function main() {
   // If this script is run directly using `node` you may want to call compile
   // manually to make sure everything is compiled
   // await hre.run('compile')
+  const network = hre.network.name
+  console.log(network)
 
-  const counterpartChainId = 218
-  const ccmProxyAddress = '0x8A0871a3475f710698e0423Ae6cCa0378641fCD9'
-
-  const SwitcheoToken = await hre.ethers.getContractFactory('SwitcheoTokenBSC')
-  const switcheoToken = await SwitcheoToken.deploy()
-
-  await switcheoToken.deployed()
+  const counterpartChainId = 5
+  const ccmProxyAddress = '0x5366ea2b5b729ff3cef404c2408c8c60cc061b71'
 
   // We get the contract to deploy
   const LockProxy = await hre.ethers.getContractFactory('LockProxy')
-  const lockProxy = await LockProxy.deploy(switcheoToken.address, ccmProxyAddress, counterpartChainId)
+  const lockProxy = await LockProxy.deploy(ccmProxyAddress, counterpartChainId)
 
   await lockProxy.deployed()
 
-  console.log('SwitcheoToken deployed to:', switcheoToken.address)
   console.log('LockProxy deployed to:', lockProxy.address)
 }
 
