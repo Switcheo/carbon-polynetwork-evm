@@ -150,7 +150,7 @@ contract PotionDepositer is ReentrancyGuard {
             fromAssetDenom: _fromAssetDenom,
             toAssetDenom: _bytesValues[5],
             recoveryAddress: _recoveryAddress,
-            fromAddress: msg.sender,
+            fromAddress: Utils.addressToBytes(address(msg.sender)),
             amount: _amount,
             withdrawFeeAmount: _withdrawFeeAmount,
             withdrawFeeAddress: _bytesValues[3]
@@ -195,7 +195,7 @@ contract PotionDepositer is ReentrancyGuard {
         uint256 _callAmount
     ) private {
         require(
-            _fromAssetAddress == USDC_ASSET_HASH,
+            _assetHash == USDC_ASSET_HASH,
             "Tokens transferred is not arbitrum USDC"
         );
 
