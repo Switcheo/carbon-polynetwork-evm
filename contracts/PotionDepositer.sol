@@ -70,6 +70,7 @@ contract PotionDepositer is ReentrancyGuard {
     /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo Carbon
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
     /// @param _bytesValues[4]: _toAssetDenom the associated asset denom on Switcheo Carbon
+    /// @param _bytesValues[5]: _fromPubKey the associated public key of the msg.sender
     /// @param _uint256Values[0]: amount, the number of tokens to deposit
     /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
     /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
@@ -115,6 +116,7 @@ contract PotionDepositer is ReentrancyGuard {
     /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo Carbon
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
     /// @param _bytesValues[4]: _toAssetDenom the associated asset denom on Switcheo Carbon
+    /// @param _bytesValues[5]: _fromPubKey the associated public key of the msg.sender
     /// @param _uint256Values[0]: _amount, the number of tokens to deposit
     /// @param _uint256Values[1]: _withdrawFeeAmount, the number of tokens to be used as fees
     function _lock(
@@ -125,6 +127,7 @@ contract PotionDepositer is ReentrancyGuard {
         bytes memory _targetProxyHash = _bytesValues[0];
         bytes memory _recoveryAddress = _bytesValues[1];
         bytes memory _fromAssetDenom = _bytesValues[2];
+        bytes memory _fromPubKey = _bytesValues[5];
 
         uint256 _amount = _uint256Values[0];
         uint256 _withdrawFeeAmount = _uint256Values[1];
@@ -138,6 +141,10 @@ contract PotionDepositer is ReentrancyGuard {
             _withdrawFeeAmount < _amount,
             "Fee amount cannot be greater than amount"
         );
+        require(
+            address(keccak256(_fromPubKey)) == address(msg.sender),
+            "Public key does not match msg.sender"
+        );
 
         _validateAssetRegistration(
             _fromAssetAddress,
@@ -150,7 +157,7 @@ contract PotionDepositer is ReentrancyGuard {
             fromAssetDenom: _fromAssetDenom,
             toAssetDenom: _bytesValues[5],
             recoveryAddress: _recoveryAddress,
-            fromAddress: Utils.addressToBytes(address(msg.sender)),
+            fromAddress: _fromPubKey,
             amount: _amount,
             withdrawFeeAmount: _withdrawFeeAmount,
             withdrawFeeAddress: _bytesValues[3]
