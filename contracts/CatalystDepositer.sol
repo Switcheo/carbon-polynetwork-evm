@@ -142,7 +142,7 @@ contract CatalystDepositer is ReentrancyGuard {
             "Fee amount cannot be greater than amount"
         );
         require(
-            address(keccak256(_fromPubKey)) == address(msg.sender),
+            address(bytes20(keccak256(_fromPubKey))) == address(msg.sender),
             "Public key does not match msg.sender"
         );
 
