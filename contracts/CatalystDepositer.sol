@@ -29,7 +29,7 @@ interface ILockProxy {
     function counterpartChainId() external view returns (uint64);
 }
 
-contract PotionDepositer is ReentrancyGuard {
+contract CatalystDepositer is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
