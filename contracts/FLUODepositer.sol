@@ -40,8 +40,12 @@ contract FLUODepositer is ReentrancyGuard {
         bytes toAssetDenom;
         bytes recoveryAddress;
         bytes fromAddress;
+        bytes fromPubKeySig;
+        bool isLongUnbond;
         uint256 amount;
         uint256 withdrawFeeAmount;
+        uint256 depositPoolId;
+        uint256 bonusVaultId;
         bytes withdrawFeeAddress;
     }
 
@@ -71,14 +75,18 @@ contract FLUODepositer is ReentrancyGuard {
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
     /// @param _bytesValues[4]: _toAssetDenom the associated asset denom on Switcheo Carbon
     /// @param _bytesValues[5]: _fromPubKey the associated public key of the msg.sender
+    /// @param _bytesValues[6]: _fromPubKeySig the signature of the msg sender's public key
     /// @param _uint256Values[0]: amount, the number of tokens to deposit
     /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
-    /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
-    /// so we allow a callAmount to support these tokens
+    /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer so we allow a callAmount to support these tokens
+    /// @param _uint256Values[3]: depositPoolId, the pool id to deposit to
+    /// @param _uint256Values[4]: bonusVaultId, the vault id to deposit to
+    /// @param _isLongUnbond: whether the deposit is for long unbond
     function lock(
         address _assetHash,
         bytes[] calldata _bytesValues,
-        uint256[] calldata _uint256Values
+        uint256[] calldata _uint256Values,
+        bool _isLongUnbond
     ) external payable nonReentrant returns (bool) {
         // it is very important that this function validates the success of a transfer correctly
         // since, once this line is passed, the deposit is assumed to be successful
@@ -86,7 +94,7 @@ contract FLUODepositer is ReentrancyGuard {
         // _recoveryAddress on Switcheo Carbon
         _transferIn(_assetHash, _uint256Values[0], _uint256Values[2]);
 
-        _lock(_assetHash, _bytesValues, _uint256Values);
+        _lock(_assetHash, _bytesValues, _uint256Values, _isLongUnbond);
 
         return true;
     }
@@ -111,18 +119,25 @@ contract FLUODepositer is ReentrancyGuard {
     }
 
     /// @dev validates the asset registration and calls the CCM contract
+    /// @param _fromAssetAddress the asset to deposit
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo Carbon
     /// @param _bytesValues[1]: _recoveryAddress the hex version of the Switcheo Carbon recovery address to deposit to
     /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo Carbon
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
     /// @param _bytesValues[4]: _toAssetDenom the associated asset denom on Switcheo Carbon
     /// @param _bytesValues[5]: _fromPubKey the associated public key of the msg.sender
-    /// @param _uint256Values[0]: _amount, the number of tokens to deposit
-    /// @param _uint256Values[1]: _withdrawFeeAmount, the number of tokens to be used as fees
+    /// @param _bytesValues[6]: _fromPubKeySig the signature of the msg sender's public key
+    /// @param _uint256Values[0]: amount, the number of tokens to deposit
+    /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
+    /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
+    /// @param _uint256Values[3]: depositPoolId, the pool id to deposit to
+    /// @param _uint256Values[4]: bonusVaultId, the vault id to deposit to
+    /// @param _isLongUnbond: whether the deposit is for long unbond
     function _lock(
         address _fromAssetAddress,
         bytes[] calldata _bytesValues,
-        uint256[] calldata _uint256Values
+        uint256[] calldata _uint256Values,
+        bool _isLongUnbond
     ) private {
         bytes memory _targetProxyHash = _bytesValues[0];
         bytes memory _recoveryAddress = _bytesValues[1];
@@ -131,6 +146,8 @@ contract FLUODepositer is ReentrancyGuard {
 
         uint256 _amount = _uint256Values[0];
         uint256 _withdrawFeeAmount = _uint256Values[1];
+        uint256 _depositPoolId = _uint256Values[3];
+        uint256 _bonusVaultId = _uint256Values[4];
 
         require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
         require(_fromAssetDenom.length > 0, "Empty fromAssetDenom");
@@ -160,7 +177,11 @@ contract FLUODepositer is ReentrancyGuard {
             fromAddress: _fromPubKey,
             amount: _amount,
             withdrawFeeAmount: _withdrawFeeAmount,
-            withdrawFeeAddress: _bytesValues[3]
+            withdrawFeeAddress: _bytesValues[3],
+            fromPubKeySig: _bytesValues[6],
+            isLongUnbond: _isLongUnbond,
+            depositPoolId: _depositPoolId,
+            bonusVaultId: _bonusVaultId
         });
 
         bytes memory txData = _serializeTransferTxArgs(txArgs);
@@ -226,8 +247,12 @@ contract FLUODepositer is ReentrancyGuard {
             ZeroCopySink.WriteVarBytes(args.toAssetDenom),
             ZeroCopySink.WriteVarBytes(args.recoveryAddress),
             ZeroCopySink.WriteVarBytes(args.fromAddress),
-            ZeroCopySink.WriteUint255(args.amount),
+            ZeroCopySink.WriteVarBytes(args.fromPubKeySig),
             ZeroCopySink.WriteUint255(args.withdrawFeeAmount),
+            ZeroCopySink.WriteUint255(args.amount),
+            ZeroCopySink.WriteUint255(args.depositPoolId),
+            ZeroCopySink.WriteUint255(args.bonusVaultId),
+            ZeroCopySink.WriteBool(args.isLongUnbond),
             ZeroCopySink.WriteVarBytes(args.withdrawFeeAddress)
         );
         return buff;
