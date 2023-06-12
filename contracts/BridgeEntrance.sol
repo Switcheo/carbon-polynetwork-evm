@@ -9,7 +9,12 @@ import "./libsv2/common/ZeroCopySink.sol";
 import "./libsv2/utils/Utils.sol";
 
 interface ICCM {
-    function crossChain(uint64 _toChainId, bytes calldata _toContract, bytes calldata _method, bytes calldata _txData) external returns (bool);
+    function crossChain(
+        uint64 _toChainId,
+        bytes calldata _toContract,
+        bytes calldata _method,
+        bytes calldata _txData
+    ) external returns (bool);
 }
 
 interface ICCMProxy {
@@ -18,7 +23,9 @@ interface ICCMProxy {
 
 interface ILockProxy {
     function registry(address _assetHash) external view returns (bytes32);
+
     function ccmProxy() external view returns (ICCMProxy);
+
     function counterpartChainId() external view returns (uint64);
 }
 
@@ -71,12 +78,7 @@ contract BridgeEntrance is ReentrancyGuard {
         address _assetHash,
         bytes[] calldata _bytesValues,
         uint256[] calldata _uint256Values
-    )
-        external
-        payable
-        nonReentrant
-        returns (bool)
-    {
+    ) external payable nonReentrant returns (bool) {
         // it is very important that this function validates the success of a transfer correctly
         // since, once this line is passed, the deposit is assumed to be successful
         // which will eventually result in the specified amount of tokens being minted for the
@@ -96,16 +98,15 @@ contract BridgeEntrance is ReentrancyGuard {
         address _assetHash,
         bytes memory _proxyAddress,
         bytes memory _fromAssetDenom
-    )
-        private
-        view
-    {
+    ) private view {
         require(_proxyAddress.length == 20, "Invalid proxyAddress");
-        bytes32 value = keccak256(abi.encodePacked(
-            _proxyAddress,
-            _fromAssetDenom
-        ));
-        require(lockProxy.registry(_assetHash) == value, "Asset not registered");
+        bytes32 value = keccak256(
+            abi.encodePacked(_proxyAddress, _fromAssetDenom)
+        );
+        require(
+            lockProxy.registry(_assetHash) == value,
+            "Asset not registered"
+        );
     }
 
     /// @dev validates the asset registration and calls the CCM contract
@@ -121,9 +122,7 @@ contract BridgeEntrance is ReentrancyGuard {
         address _fromAssetAddress,
         bytes[] calldata _bytesValues,
         uint256[] calldata _uint256Values
-    )
-        private
-    {
+    ) private {
         bytes memory _targetProxyHash = _bytesValues[0];
         bytes memory _recoveryAddress = _bytesValues[1];
         bytes memory _fromAssetDenom = _bytesValues[2];
@@ -137,9 +136,16 @@ contract BridgeEntrance is ReentrancyGuard {
         require(_bytesValues[4].length > 0, "Empty toAddress");
         require(_bytesValues[5].length > 0, "Empty toAssetDenom");
         require(_amount > 0, "Amount must be more than zero");
-        require(_withdrawFeeAmount < _amount, "Fee amount cannot be greater than amount");
+        require(
+            _withdrawFeeAmount < _amount,
+            "Fee amount cannot be greater than amount"
+        );
 
-        _validateAssetRegistration(_fromAssetAddress, _targetProxyHash, _fromAssetDenom);
+        _validateAssetRegistration(
+            _fromAssetAddress,
+            _targetProxyHash,
+            _fromAssetDenom
+        );
 
         TransferTxArgs memory txArgs = TransferTxArgs({
             fromAssetAddress: Utils.addressToBytes(_fromAssetAddress),
@@ -156,17 +162,28 @@ contract BridgeEntrance is ReentrancyGuard {
         ICCM ccm = _getCcm();
         uint64 counterpartChainId = lockProxy.counterpartChainId();
         require(
-            ccm.crossChain(counterpartChainId, _targetProxyHash, "unlock", txData),
+            ccm.crossChain(
+                counterpartChainId,
+                _targetProxyHash,
+                "unlock",
+                txData
+            ),
             "EthCrossChainManager crossChain executed error!"
         );
 
-        emit LockEvent(_fromAssetAddress, counterpartChainId, _fromAssetDenom, _recoveryAddress, txData);
+        emit LockEvent(
+            _fromAssetAddress,
+            counterpartChainId,
+            _fromAssetDenom,
+            _recoveryAddress,
+            txData
+        );
     }
 
     function _getCcm() private view returns (ICCM) {
-      ICCMProxy ccmProxy = lockProxy.ccmProxy();
-      ICCM ccm = ICCM(ccmProxy.getEthCrossChainManager());
-      return ccm;
+        ICCMProxy ccmProxy = lockProxy.ccmProxy();
+        ICCM ccm = ICCM(ccmProxy.getEthCrossChainManager());
+        return ccm;
     }
 
     /// @dev transfers funds from an address into this contract
@@ -178,12 +195,13 @@ contract BridgeEntrance is ReentrancyGuard {
         address _assetHash,
         uint256 _amount,
         uint256 _callAmount
-    )
-        private
-    {
+    ) private {
         if (_assetHash == ETH_ASSET_HASH) {
-            require(msg.value == _amount, "ETH transferred does not match the expected amount");
-            (bool sent,) = address(lockProxy).call{value: msg.value}("");
+            require(
+                msg.value == _amount,
+                "ETH transferred does not match the expected amount"
+            );
+            (bool sent, ) = address(lockProxy).call{value: msg.value}("");
             require(sent, "Failed to send Ether to LockProxy");
             return;
         }
@@ -192,10 +210,15 @@ contract BridgeEntrance is ReentrancyGuard {
         uint256 before = token.balanceOf(address(lockProxy));
         token.safeTransferFrom(msg.sender, address(lockProxy), _callAmount);
         uint256 transferred = token.balanceOf(address(lockProxy)).sub(before);
-        require(transferred == _amount, "Tokens transferred does not match the expected amount");
+        require(
+            transferred == _amount,
+            "Tokens transferred does not match the expected amount"
+        );
     }
 
-    function _serializeTransferTxArgs(TransferTxArgs memory args) private pure returns (bytes memory) {
+    function _serializeTransferTxArgs(
+        TransferTxArgs memory args
+    ) private pure returns (bytes memory) {
         bytes memory buff;
         buff = abi.encodePacked(
             ZeroCopySink.WriteVarBytes(args.fromAssetAddress),
