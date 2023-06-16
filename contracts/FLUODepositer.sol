@@ -36,8 +36,7 @@ contract FLUODepositer is ReentrancyGuard {
     // used for cross-chain lock and unlock methods
     struct TransferTxArgs {
         bytes fromAssetAddress;
-        bytes fromAssetDenom;
-        bytes toAssetDenom;
+        bytes toAssetHash;
         bytes recoveryAddress;
         bytes fromAddress;
         bytes fromPubKeySig;
@@ -71,11 +70,10 @@ contract FLUODepositer is ReentrancyGuard {
     /// @param _assetHash the asset to deposit
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo Carbon
     /// @param _bytesValues[1]: _recoveryAddress the hex version of the Switcheo Carbon recovery address to deposit to
-    /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo Carbon
+    /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo Carbon
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
-    /// @param _bytesValues[4]: _toAssetDenom the associated asset denom on Switcheo Carbon
-    /// @param _bytesValues[5]: _fromPubKey the associated public key of the msg.sender
-    /// @param _bytesValues[6]: _fromPubKeySig the signature of the msg sender's public key
+    /// @param _bytesValues[4]: _fromPubKey the associated public key of the msg.sender
+    /// @param _bytesValues[5]: _fromPubKeySig the signature of the msg sender's public key
     /// @param _uint256Values[0]: amount, the number of tokens to deposit
     /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
     /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer so we allow a callAmount to support these tokens
@@ -122,11 +120,10 @@ contract FLUODepositer is ReentrancyGuard {
     /// @param _fromAssetAddress the asset to deposit
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo Carbon
     /// @param _bytesValues[1]: _recoveryAddress the hex version of the Switcheo Carbon recovery address to deposit to
-    /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo Carbon
+    /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo Carbon
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
-    /// @param _bytesValues[4]: _toAssetDenom the associated asset denom on Switcheo Carbon
-    /// @param _bytesValues[5]: _fromPubKey the associated public key of the msg.sender
-    /// @param _bytesValues[6]: _fromPubKeySig the signature of the msg sender's public key
+    /// @param _bytesValues[4]: _fromPubKey the associated public key of the msg.sender
+    /// @param _bytesValues[5]: _fromPubKeySig the signature of the msg sender's public key
     /// @param _uint256Values[0]: amount, the number of tokens to deposit
     /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
     /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
@@ -139,49 +136,37 @@ contract FLUODepositer is ReentrancyGuard {
         uint256[] calldata _uint256Values,
         bool _isLongUnbond
     ) private {
-        bytes memory _targetProxyHash = _bytesValues[0];
-        bytes memory _recoveryAddress = _bytesValues[1];
-        bytes memory _fromAssetDenom = _bytesValues[2];
-        bytes memory _fromPubKey = _bytesValues[5];
-
-        uint256 _amount = _uint256Values[0];
-        uint256 _withdrawFeeAmount = _uint256Values[1];
-        uint256 _depositPoolId = _uint256Values[3];
-        uint256 _bonusVaultId = _uint256Values[4];
-
-        require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
-        require(_fromAssetDenom.length > 0, "Empty fromAssetDenom");
-        require(_recoveryAddress.length > 0, "Empty recoveryAddress");
-        require(_bytesValues[4].length > 0, "Empty toAssetDenom");
-        require(_amount > 0, "Amount must be more than zero");
+        require(_bytesValues[0].length == 20, "Invalid targetProxyHash");
+        require(_bytesValues[2].length > 0, "Empty fromAssetDenom");
+        require(_bytesValues[1].length > 0, "Empty recoveryAddress");
+        require(_uint256Values[0] > 0, "Amount must be more than zero");
         require(
-            _withdrawFeeAmount < _amount,
+            _uint256Values[1] < _uint256Values[0],
             "Fee amount cannot be greater than amount"
         );
         require(
-            address(bytes20(keccak256(_fromPubKey))) == address(msg.sender),
+            address(bytes20(keccak256(_bytesValues[5]))) == address(msg.sender),
             "Public key does not match msg.sender"
         );
 
         _validateAssetRegistration(
             _fromAssetAddress,
-            _targetProxyHash,
-            _fromAssetDenom
+            _bytesValues[0],
+            _bytesValues[2]
         );
 
         TransferTxArgs memory txArgs = TransferTxArgs({
             fromAssetAddress: Utils.addressToBytes(_fromAssetAddress),
-            fromAssetDenom: _fromAssetDenom,
-            toAssetDenom: _bytesValues[5],
-            recoveryAddress: _recoveryAddress,
-            fromAddress: _fromPubKey,
-            amount: _amount,
-            withdrawFeeAmount: _withdrawFeeAmount,
+            toAssetHash: _bytesValues[2],
+            recoveryAddress: _bytesValues[1],
+            fromAddress: _bytesValues[4],
+            amount: _uint256Values[0],
+            withdrawFeeAmount: _uint256Values[1],
             withdrawFeeAddress: _bytesValues[3],
-            fromPubKeySig: _bytesValues[6],
+            fromPubKeySig: _bytesValues[5],
             isLongUnbond: _isLongUnbond,
-            depositPoolId: _depositPoolId,
-            bonusVaultId: _bonusVaultId
+            depositPoolId: _uint256Values[3],
+            bonusVaultId: _uint256Values[4]
         });
 
         bytes memory txData = _serializeTransferTxArgs(txArgs);
@@ -190,7 +175,7 @@ contract FLUODepositer is ReentrancyGuard {
         require(
             ccm.crossChain(
                 counterpartChainId,
-                _targetProxyHash,
+                _bytesValues[0],
                 "unlock",
                 txData
             ),
@@ -200,8 +185,8 @@ contract FLUODepositer is ReentrancyGuard {
         emit LockEvent(
             _fromAssetAddress,
             counterpartChainId,
-            _fromAssetDenom,
-            _recoveryAddress,
+            _bytesValues[2],
+            _bytesValues[1],
             txData
         );
     }
@@ -243,8 +228,7 @@ contract FLUODepositer is ReentrancyGuard {
         bytes memory buff;
         buff = abi.encodePacked(
             ZeroCopySink.WriteVarBytes(args.fromAssetAddress),
-            ZeroCopySink.WriteVarBytes(args.fromAssetDenom),
-            ZeroCopySink.WriteVarBytes(args.toAssetDenom),
+            ZeroCopySink.WriteVarBytes(args.toAssetHash),
             ZeroCopySink.WriteVarBytes(args.recoveryAddress),
             ZeroCopySink.WriteVarBytes(args.fromAddress),
             ZeroCopySink.WriteVarBytes(args.fromPubKeySig),
