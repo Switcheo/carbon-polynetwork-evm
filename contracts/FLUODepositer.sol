@@ -45,6 +45,8 @@ contract FLUODepositer is ReentrancyGuard {
         uint256 withdrawFeeAmount;
         uint256 depositPoolId;
         uint256 bonusVaultId;
+        bytes fluoDistributorAddress;
+        bytes bonusFLUODistributorAddress;
         bytes withdrawFeeAddress;
     }
 
@@ -74,6 +76,8 @@ contract FLUODepositer is ReentrancyGuard {
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
     /// @param _bytesValues[4]: _fromPubKey the associated public key of the msg.sender
     /// @param _bytesValues[5]: _fromPubKeySig the signature of the msg sender's public key
+    /// @param _bytesValues[6]: _fluoDistributorAddress the address of the FLUODistributor contract on carbon evm
+    /// @param _bytesValues[7]: _bonusFLUODistributorAddress the address of the BonusFLUODistributor contract on carbon evm
     /// @param _uint256Values[0]: amount, the number of tokens to deposit
     /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
     /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer so we allow a callAmount to support these tokens
@@ -124,6 +128,8 @@ contract FLUODepositer is ReentrancyGuard {
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
     /// @param _bytesValues[4]: _fromPubKey the associated public key of the msg.sender
     /// @param _bytesValues[5]: _fromPubKeySig the signature of the msg sender's public key
+    /// @param _bytesValues[6]: _fluoDistributorAddress the address of the FLUODistributor contract on carbon evm
+    /// @param _bytesValues[7]: _bonusFLUODistributorAddress the address of the BonusFLUODistributor contract on carbon evm
     /// @param _uint256Values[0]: amount, the number of tokens to deposit
     /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
     /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
@@ -144,8 +150,14 @@ contract FLUODepositer is ReentrancyGuard {
             _uint256Values[1] < _uint256Values[0],
             "Fee amount cannot be greater than amount"
         );
+        require(_bytesValues[6].length == 20, "Invalid fluoDistributorAddress");
         require(
-            address(bytes20(keccak256(_bytesValues[5]))) == address(msg.sender),
+            _bytesValues[7].length == 20,
+            "Invalid bonusFLUODistributorAddress"
+        );
+        require(
+            address(bytes20(uint160(uint256(keccak256(_bytesValues[4]))))) ==
+                address(msg.sender),
             "Public key does not match msg.sender"
         );
 
@@ -155,19 +167,39 @@ contract FLUODepositer is ReentrancyGuard {
             _bytesValues[2]
         );
 
-        TransferTxArgs memory txArgs = TransferTxArgs({
-            fromAssetAddress: Utils.addressToBytes(_fromAssetAddress),
-            toAssetHash: _bytesValues[2],
-            recoveryAddress: _bytesValues[1],
-            fromAddress: _bytesValues[4],
-            amount: _uint256Values[0],
-            withdrawFeeAmount: _uint256Values[1],
-            withdrawFeeAddress: _bytesValues[3],
-            fromPubKeySig: _bytesValues[5],
-            isLongUnbond: _isLongUnbond,
-            depositPoolId: _uint256Values[3],
-            bonusVaultId: _uint256Values[4]
-        });
+        TransferTxArgs memory txArgs;
+        {
+            txArgs.fromAssetAddress = Utils.addressToBytes(_fromAssetAddress);
+            txArgs.toAssetHash = _bytesValues[2];
+            txArgs.recoveryAddress = _bytesValues[1];
+            txArgs.fromAddress = _bytesValues[4];
+            txArgs.amount = _uint256Values[0];
+            txArgs.withdrawFeeAmount = _uint256Values[1];
+            txArgs.withdrawFeeAddress = _bytesValues[3];
+        }
+        {
+            txArgs.fromPubKeySig = _bytesValues[5];
+            txArgs.isLongUnbond = _isLongUnbond;
+            txArgs.depositPoolId = _uint256Values[3];
+            txArgs.fluoDistributorAddress = _bytesValues[6];
+            txArgs.bonusFLUODistributorAddress = _bytesValues[7];
+            txArgs.bonusVaultId = _uint256Values[4];
+        }
+        // TransferTxArgs memory txArgs = TransferTxArgs({
+        //     fromAssetAddress: Utils.addressToBytes(_fromAssetAddress),
+        //     toAssetHash: _bytesValues[2],
+        //     recoveryAddress: _bytesValues[1],
+        //     fromAddress: _bytesValues[4],
+        //     amount: _uint256Values[0],
+        //     withdrawFeeAmount: _uint256Values[1],
+        //     withdrawFeeAddress: _bytesValues[3],
+        //     fromPubKeySig: _bytesValues[5],
+        //     isLongUnbond: _isLongUnbond,
+        //     depositPoolId: _uint256Values[3],
+        //     fluoDistributorAddress: _bytesValues[6],
+        //     bonusFLUODistributorAddress: _bytesValues[7],
+        //     bonusVaultId: _uint256Values[4]
+        // });
 
         bytes memory txData = _serializeTransferTxArgs(txArgs);
         ICCM ccm = _getCcm();
@@ -225,20 +257,30 @@ contract FLUODepositer is ReentrancyGuard {
     function _serializeTransferTxArgs(
         TransferTxArgs memory args
     ) private pure returns (bytes memory) {
-        bytes memory buff;
-        buff = abi.encodePacked(
-            ZeroCopySink.WriteVarBytes(args.fromAssetAddress),
-            ZeroCopySink.WriteVarBytes(args.toAssetHash),
-            ZeroCopySink.WriteVarBytes(args.recoveryAddress),
-            ZeroCopySink.WriteVarBytes(args.fromAddress),
-            ZeroCopySink.WriteVarBytes(args.fromPubKeySig),
-            ZeroCopySink.WriteUint255(args.withdrawFeeAmount),
-            ZeroCopySink.WriteUint255(args.amount),
-            ZeroCopySink.WriteUint255(args.depositPoolId),
-            ZeroCopySink.WriteUint255(args.bonusVaultId),
-            ZeroCopySink.WriteBool(args.isLongUnbond),
-            ZeroCopySink.WriteVarBytes(args.withdrawFeeAddress)
-        );
+        bytes memory buff1;
+        bytes memory buff2;
+        {
+            buff1 = abi.encodePacked(
+                ZeroCopySink.WriteVarBytes(args.fromAssetAddress),
+                ZeroCopySink.WriteVarBytes(args.toAssetHash),
+                ZeroCopySink.WriteVarBytes(args.recoveryAddress),
+                ZeroCopySink.WriteVarBytes(args.fromAddress),
+                ZeroCopySink.WriteVarBytes(args.fromPubKeySig),
+                ZeroCopySink.WriteVarBytes(args.fluoDistributorAddress),
+                ZeroCopySink.WriteVarBytes(args.bonusFLUODistributorAddress)
+            );
+        }
+        {
+            buff2 = abi.encodePacked(
+                ZeroCopySink.WriteUint255(args.withdrawFeeAmount),
+                ZeroCopySink.WriteUint255(args.amount),
+                ZeroCopySink.WriteUint255(args.depositPoolId),
+                ZeroCopySink.WriteUint255(args.bonusVaultId),
+                ZeroCopySink.WriteBool(args.isLongUnbond),
+                ZeroCopySink.WriteVarBytes(args.withdrawFeeAddress)
+            );
+        }
+        bytes memory buff = abi.encodePacked(buff1, buff2);
         return buff;
     }
 }
