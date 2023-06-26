@@ -185,21 +185,6 @@ contract FLUODepositer is ReentrancyGuard {
             txArgs.bonusFLUODistributorAddress = _bytesValues[7];
             txArgs.bonusVaultId = _uint256Values[4];
         }
-        // TransferTxArgs memory txArgs = TransferTxArgs({
-        //     fromAssetAddress: Utils.addressToBytes(_fromAssetAddress),
-        //     toAssetHash: _bytesValues[2],
-        //     recoveryAddress: _bytesValues[1],
-        //     fromAddress: _bytesValues[4],
-        //     amount: _uint256Values[0],
-        //     withdrawFeeAmount: _uint256Values[1],
-        //     withdrawFeeAddress: _bytesValues[3],
-        //     fromPubKeySig: _bytesValues[5],
-        //     isLongUnbond: _isLongUnbond,
-        //     depositPoolId: _uint256Values[3],
-        //     fluoDistributorAddress: _bytesValues[6],
-        //     bonusFLUODistributorAddress: _bytesValues[7],
-        //     bonusVaultId: _uint256Values[4]
-        // });
 
         bytes memory txData = _serializeTransferTxArgs(txArgs);
         ICCM ccm = _getCcm();
