@@ -29,7 +29,7 @@ interface ILockProxy {
     function counterpartChainId() external view returns (uint64);
 }
 
-contract FLUODepositer is ReentrancyGuard {
+contract FLUODepositerTest is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -50,7 +50,7 @@ contract FLUODepositer is ReentrancyGuard {
         bytes withdrawFeeAddress;
     }
 
-    address public immutable USDC_ASSET_HASH;
+    address public constant USDC_ASSET_HASH = address(0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8);
 
     ILockProxy public lockProxy;
 
@@ -62,10 +62,9 @@ contract FLUODepositer is ReentrancyGuard {
         bytes txArgs
     );
 
-    constructor(address _lockProxy, address _USDC_ASSET_HASH) {
+    constructor(address _lockProxy) {
         require(_lockProxy != address(0), "lockProxy cannot be empty");
         lockProxy = ILockProxy(_lockProxy);
-        USDC_ASSET_HASH = _USDC_ASSET_HASH;
     }
 
     /// @dev Performs a deposit
@@ -90,34 +89,9 @@ contract FLUODepositer is ReentrancyGuard {
         uint256[] calldata _uint256Values,
         bool _isLongUnbond
     ) external payable nonReentrant returns (bool) {
-        // it is very important that this function validates the success of a transfer correctly
-        // since, once this line is passed, the deposit is assumed to be successful
-        // which will eventually result in the specified amount of tokens being minted for the
-        // _recoveryAddress on Switcheo Carbon
-        _transferIn(_assetHash, _uint256Values[0], _uint256Values[2]);
-
         _lock(_assetHash, _bytesValues, _uint256Values, _isLongUnbond);
 
         return true;
-    }
-
-    /// @dev Validates that an asset's registration matches the given params
-    /// @param _assetHash the address of the asset to check
-    /// @param _proxyAddress the expected proxy address on Switcheo Carbon
-    /// @param _fromAssetDenom the expected asset hash on Switcheo Carbon
-    function _validateAssetRegistration(
-        address _assetHash,
-        bytes memory _proxyAddress,
-        bytes memory _fromAssetDenom
-    ) private view {
-        require(_proxyAddress.length == 20, "Invalid proxyAddress");
-        bytes32 value = keccak256(
-            abi.encodePacked(_proxyAddress, _fromAssetDenom)
-        );
-        require(
-            lockProxy.registry(_assetHash) == value,
-            "Asset not registered"
-        );
     }
 
     /// @dev validates the asset registration and calls the CCM contract
@@ -142,31 +116,10 @@ contract FLUODepositer is ReentrancyGuard {
         uint256[] calldata _uint256Values,
         bool _isLongUnbond
     ) private {
-        require(_bytesValues[0].length == 20, "Invalid targetProxyHash");
-        require(_bytesValues[2].length > 0, "Empty fromAssetDenom");
-        require(_bytesValues[1].length > 0, "Empty recoveryAddress");
-        require(_uint256Values[0] > 0, "Amount must be more than zero");
         require(
-            _uint256Values[1] < _uint256Values[0],
-            "Fee amount cannot be greater than amount"
-        );
-        require(_bytesValues[6].length == 20, "Invalid fluoDistributorAddress");
-        require(
-            _bytesValues[7].length == 20,
-            "Invalid bonusFLUODistributorAddress"
-        );
-        require(
-            address(bytes20(uint160(uint256(keccak256(_bytesValues[4]))))) ==
-                address(msg.sender),
+            address(bytes20(uint160(uint256(keccak256(_bytesValues[4]))))) == address(msg.sender),
             "Public key does not match msg.sender"
         );
-
-        _validateAssetRegistration(
-            _fromAssetAddress,
-            _bytesValues[0],
-            _bytesValues[2]
-        );
-
         TransferTxArgs memory txArgs;
         {
             txArgs.fromAssetAddress = Utils.addressToBytes(_fromAssetAddress);
@@ -187,61 +140,10 @@ contract FLUODepositer is ReentrancyGuard {
         }
 
         bytes memory txData = _serializeTransferTxArgs(txArgs);
-        ICCM ccm = _getCcm();
-        uint64 counterpartChainId = lockProxy.counterpartChainId();
-        require(
-            ccm.crossChain(
-                counterpartChainId,
-                _bytesValues[0],
-                "unlock",
-                txData
-            ),
-            "EthCrossChainManager crossChain executed error!"
-        );
-
-        emit LockEvent(
-            _fromAssetAddress,
-            counterpartChainId,
-            _bytesValues[2],
-            _bytesValues[1],
-            txData
-        );
+        emit LockEvent(_fromAssetAddress, 5, _bytesValues[2], _bytesValues[1], txData);
     }
 
-    function _getCcm() private view returns (ICCM) {
-        ICCMProxy ccmProxy = lockProxy.ccmProxy();
-        ICCM ccm = ICCM(ccmProxy.getEthCrossChainManager());
-        return ccm;
-    }
-
-    /// @dev transfers funds from an address into this contract
-    /// for ETH transfers, we only check that msg.value == _amount, and _callAmount is ignored
-    /// for token transfers, the difference between this contract's before and after balance must equal _amount
-    /// these checks are assumed to be sufficient in ensuring that the expected amount
-    /// of funds were transferred in
-    function _transferIn(
-        address _assetHash,
-        uint256 _amount,
-        uint256 _callAmount
-    ) private {
-        require(
-            _assetHash == USDC_ASSET_HASH,
-            "Tokens transferred is not arbitrum USDC"
-        );
-
-        IERC20 token = IERC20(_assetHash);
-        uint256 before = token.balanceOf(address(lockProxy));
-        token.safeTransferFrom(msg.sender, address(lockProxy), _callAmount);
-        uint256 transferred = token.balanceOf(address(lockProxy)).sub(before);
-        require(
-            transferred == _amount,
-            "Tokens transferred does not match the expected amount"
-        );
-    }
-
-    function _serializeTransferTxArgs(
-        TransferTxArgs memory args
-    ) private pure returns (bytes memory) {
+    function _serializeTransferTxArgs(TransferTxArgs memory args) private pure returns (bytes memory) {
         bytes memory buff1;
         bytes memory buff2;
         {
