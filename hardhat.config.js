@@ -52,7 +52,7 @@ module.exports = {
     },
     arbitrum: {
       url: `https://arb1.arbitrum.io/rpc`,
-      accounts: [],
+      accounts: [process.env.controlKey,],
     },
     bsc: {
       url: `https://bsc-dataseed1.defibit.io/`,
