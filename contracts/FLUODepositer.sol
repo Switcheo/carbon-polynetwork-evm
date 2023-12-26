@@ -29,23 +29,28 @@ interface ILockProxy {
     function counterpartChainId() external view returns (uint64);
 }
 
-contract BridgeEntrance is ReentrancyGuard {
+contract FLUODepositer is ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     // used for cross-chain lock and unlock methods
     struct TransferTxArgs {
         bytes fromAssetAddress;
-        bytes fromAssetDenom;
-        bytes toAssetDenom;
+        bytes toAssetHash;
         bytes recoveryAddress;
-        bytes toAddress;
+        bytes fromAddress;
+        bytes fromPubKeySig;
+        bool isLongUnbond;
         uint256 amount;
         uint256 withdrawFeeAmount;
+        uint256 depositPoolId;
+        uint256 bonusVaultId;
+        bytes fluoDistributorAddress;
+        bytes bonusFLUODistributorAddress;
         bytes withdrawFeeAddress;
     }
 
-    address public constant ETH_ASSET_HASH = address(0);
+    address public immutable USDC_ASSET_HASH;
 
     ILockProxy public lockProxy;
 
@@ -57,27 +62,33 @@ contract BridgeEntrance is ReentrancyGuard {
         bytes txArgs
     );
 
-    constructor(address _lockProxy) {
+    constructor(address _lockProxy, address _USDC_ASSET_HASH) {
         require(_lockProxy != address(0), "lockProxy cannot be empty");
         lockProxy = ILockProxy(_lockProxy);
+        USDC_ASSET_HASH = _USDC_ASSET_HASH;
     }
 
     /// @dev Performs a deposit
     /// @param _assetHash the asset to deposit
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo Carbon
     /// @param _bytesValues[1]: _recoveryAddress the hex version of the Switcheo Carbon recovery address to deposit to
-    /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo Carbon
+    /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo Carbon
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
-    /// @param _bytesValues[4]: _toAddress the L1 address to bridge to
-    /// @param _bytesValues[5]: _toAssetDenom the associated asset denom on Switcheo Carbon
+    /// @param _bytesValues[4]: _fromPubKey the associated public key of the msg.sender
+    /// @param _bytesValues[5]: _fromPubKeySig the signature of the msg sender's public key
+    /// @param _bytesValues[6]: _fluoDistributorAddress the address of the FLUODistributor contract on carbon evm
+    /// @param _bytesValues[7]: _bonusFLUODistributorAddress the address of the BonusFLUODistributor contract on carbon evm
     /// @param _uint256Values[0]: amount, the number of tokens to deposit
     /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
-    /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
-    /// so we allow a callAmount to support these tokens
+    /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer so we allow a callAmount to support these tokens
+    /// @param _uint256Values[3]: depositPoolId, the pool id to deposit to
+    /// @param _uint256Values[4]: bonusVaultId, the vault id to deposit to
+    /// @param _isLongUnbond: whether the deposit is for long unbond
     function lock(
         address _assetHash,
         bytes[] calldata _bytesValues,
-        uint256[] calldata _uint256Values
+        uint256[] calldata _uint256Values,
+        bool _isLongUnbond
     ) external payable nonReentrant returns (bool) {
         // it is very important that this function validates the success of a transfer correctly
         // since, once this line is passed, the deposit is assumed to be successful
@@ -85,7 +96,7 @@ contract BridgeEntrance is ReentrancyGuard {
         // _recoveryAddress on Switcheo Carbon
         _transferIn(_assetHash, _uint256Values[0], _uint256Values[2]);
 
-        _lock(_assetHash, _bytesValues, _uint256Values);
+        _lock(_assetHash, _bytesValues, _uint256Values, _isLongUnbond);
 
         return true;
     }
@@ -110,53 +121,70 @@ contract BridgeEntrance is ReentrancyGuard {
     }
 
     /// @dev validates the asset registration and calls the CCM contract
+    /// @param _fromAssetAddress the asset to deposit
     /// @param _bytesValues[0]: _targetProxyHash the associated proxy hash on Switcheo Carbon
     /// @param _bytesValues[1]: _recoveryAddress the hex version of the Switcheo Carbon recovery address to deposit to
-    /// @param _bytesValues[2]: _fromAssetDenom the associated asset hash on Switcheo Carbon
+    /// @param _bytesValues[2]: _toAssetHash the associated asset hash on Switcheo Carbon
     /// @param _bytesValues[3]: _withdrawFeeAddress the hex version of the Switcheo Carbon address to send the fee to
-    /// @param _bytesValues[4]: _toAddress the L1 address to bridge to
-    /// @param _bytesValues[5]: _toAssetDenom the associated asset denom on Switcheo Carbon
-    /// @param _uint256Values[0]: _amount, the number of tokens to deposit
-    /// @param _uint256Values[1]: _withdrawFeeAmount, the number of tokens to be used as fees
+    /// @param _bytesValues[4]: _fromPubKey the associated public key of the msg.sender
+    /// @param _bytesValues[5]: _fromPubKeySig the signature of the msg sender's public key
+    /// @param _bytesValues[6]: _fluoDistributorAddress the address of the FLUODistributor contract on carbon evm
+    /// @param _bytesValues[7]: _bonusFLUODistributorAddress the address of the BonusFLUODistributor contract on carbon evm
+    /// @param _uint256Values[0]: amount, the number of tokens to deposit
+    /// @param _uint256Values[1]: withdrawFeeAmount, the number of tokens to be used as fees
+    /// @param _uint256Values[2]: callAmount, some tokens may burn an amount before transfer
+    /// @param _uint256Values[3]: depositPoolId, the pool id to deposit to
+    /// @param _uint256Values[4]: bonusVaultId, the vault id to deposit to
+    /// @param _isLongUnbond: whether the deposit is for long unbond
     function _lock(
         address _fromAssetAddress,
         bytes[] calldata _bytesValues,
-        uint256[] calldata _uint256Values
+        uint256[] calldata _uint256Values,
+        bool _isLongUnbond
     ) private {
-        bytes memory _targetProxyHash = _bytesValues[0];
-        bytes memory _recoveryAddress = _bytesValues[1];
-        bytes memory _fromAssetDenom = _bytesValues[2];
-
-        uint256 _amount = _uint256Values[0];
-        uint256 _withdrawFeeAmount = _uint256Values[1];
-
-        require(_targetProxyHash.length == 20, "Invalid targetProxyHash");
-        require(_fromAssetDenom.length > 0, "Empty fromAssetDenom");
-        require(_recoveryAddress.length > 0, "Empty recoveryAddress");
-        require(_bytesValues[4].length > 0, "Empty toAddress");
-        require(_bytesValues[5].length > 0, "Empty toAssetDenom");
-        require(_amount > 0, "Amount must be more than zero");
+        require(_bytesValues[0].length == 20, "Invalid targetProxyHash");
+        require(_bytesValues[2].length > 0, "Empty fromAssetDenom");
+        require(_bytesValues[1].length > 0, "Empty recoveryAddress");
+        require(_uint256Values[0] > 0, "Amount must be more than zero");
         require(
-            _withdrawFeeAmount < _amount,
+            _uint256Values[1] < _uint256Values[0],
             "Fee amount cannot be greater than amount"
+        );
+        require(_bytesValues[6].length == 20, "Invalid fluoDistributorAddress");
+        require(
+            _bytesValues[7].length == 20,
+            "Invalid bonusFLUODistributorAddress"
+        );
+        require(
+            address(bytes20(uint160(uint256(keccak256(_bytesValues[4]))))) ==
+                address(msg.sender),
+            "Public key does not match msg.sender"
         );
 
         _validateAssetRegistration(
             _fromAssetAddress,
-            _targetProxyHash,
-            _fromAssetDenom
+            _bytesValues[0],
+            _bytesValues[2]
         );
 
-        TransferTxArgs memory txArgs = TransferTxArgs({
-            fromAssetAddress: Utils.addressToBytes(_fromAssetAddress),
-            fromAssetDenom: _fromAssetDenom,
-            toAssetDenom: _bytesValues[5],
-            recoveryAddress: _recoveryAddress,
-            toAddress: _bytesValues[4],
-            amount: _amount,
-            withdrawFeeAmount: _withdrawFeeAmount,
-            withdrawFeeAddress: _bytesValues[3]
-        });
+        TransferTxArgs memory txArgs;
+        {
+            txArgs.fromAssetAddress = Utils.addressToBytes(_fromAssetAddress);
+            txArgs.toAssetHash = _bytesValues[2];
+            txArgs.recoveryAddress = _bytesValues[1];
+            txArgs.fromAddress = _bytesValues[4];
+            txArgs.amount = _uint256Values[0];
+            txArgs.withdrawFeeAmount = _uint256Values[1];
+            txArgs.withdrawFeeAddress = _bytesValues[3];
+        }
+        {
+            txArgs.fromPubKeySig = _bytesValues[5];
+            txArgs.isLongUnbond = _isLongUnbond;
+            txArgs.depositPoolId = _uint256Values[3];
+            txArgs.fluoDistributorAddress = _bytesValues[6];
+            txArgs.bonusFLUODistributorAddress = _bytesValues[7];
+            txArgs.bonusVaultId = _uint256Values[4];
+        }
 
         bytes memory txData = _serializeTransferTxArgs(txArgs);
         ICCM ccm = _getCcm();
@@ -164,7 +192,7 @@ contract BridgeEntrance is ReentrancyGuard {
         require(
             ccm.crossChain(
                 counterpartChainId,
-                _targetProxyHash,
+                _bytesValues[0],
                 "unlock",
                 txData
             ),
@@ -174,8 +202,8 @@ contract BridgeEntrance is ReentrancyGuard {
         emit LockEvent(
             _fromAssetAddress,
             counterpartChainId,
-            _fromAssetDenom,
-            _recoveryAddress,
+            _bytesValues[2],
+            _bytesValues[1],
             txData
         );
     }
@@ -196,15 +224,10 @@ contract BridgeEntrance is ReentrancyGuard {
         uint256 _amount,
         uint256 _callAmount
     ) private {
-        if (_assetHash == ETH_ASSET_HASH) {
-            require(
-                msg.value == _amount,
-                "ETH transferred does not match the expected amount"
-            );
-            (bool sent, ) = address(lockProxy).call{value: msg.value}("");
-            require(sent, "Failed to send Ether to LockProxy");
-            return;
-        }
+        require(
+            _assetHash == USDC_ASSET_HASH,
+            "Tokens transferred is not arbitrum USDC"
+        );
 
         IERC20 token = IERC20(_assetHash);
         uint256 before = token.balanceOf(address(lockProxy));
@@ -219,17 +242,30 @@ contract BridgeEntrance is ReentrancyGuard {
     function _serializeTransferTxArgs(
         TransferTxArgs memory args
     ) private pure returns (bytes memory) {
-        bytes memory buff;
-        buff = abi.encodePacked(
-            ZeroCopySink.WriteVarBytes(args.fromAssetAddress),
-            ZeroCopySink.WriteVarBytes(args.fromAssetDenom),
-            ZeroCopySink.WriteVarBytes(args.toAssetDenom),
-            ZeroCopySink.WriteVarBytes(args.recoveryAddress),
-            ZeroCopySink.WriteVarBytes(args.toAddress),
-            ZeroCopySink.WriteUint255(args.amount),
-            ZeroCopySink.WriteUint255(args.withdrawFeeAmount),
-            ZeroCopySink.WriteVarBytes(args.withdrawFeeAddress)
-        );
+        bytes memory buff1;
+        bytes memory buff2;
+        {
+            buff1 = abi.encodePacked(
+                ZeroCopySink.WriteVarBytes(args.fromAssetAddress),
+                ZeroCopySink.WriteVarBytes(args.toAssetHash),
+                ZeroCopySink.WriteVarBytes(args.recoveryAddress),
+                ZeroCopySink.WriteVarBytes(args.fromAddress),
+                ZeroCopySink.WriteVarBytes(args.fromPubKeySig),
+                ZeroCopySink.WriteVarBytes(args.fluoDistributorAddress),
+                ZeroCopySink.WriteVarBytes(args.bonusFLUODistributorAddress)
+            );
+        }
+        {
+            buff2 = abi.encodePacked(
+                ZeroCopySink.WriteUint255(args.withdrawFeeAmount),
+                ZeroCopySink.WriteUint255(args.amount),
+                ZeroCopySink.WriteUint255(args.depositPoolId),
+                ZeroCopySink.WriteUint255(args.bonusVaultId),
+                ZeroCopySink.WriteBool(args.isLongUnbond),
+                ZeroCopySink.WriteVarBytes(args.withdrawFeeAddress)
+            );
+        }
+        bytes memory buff = abi.encodePacked(buff1, buff2);
         return buff;
     }
 }

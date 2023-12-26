@@ -52,7 +52,8 @@ module.exports = {
     },
     arbitrum: {
       url: `https://arb1.arbitrum.io/rpc`,
-      accounts: [],
+      accounts: [process.env.controlKey,],
+      apiKey: process.env.etherscanVerifyAPIKey,
     },
     bsc: {
       url: `https://bsc-dataseed1.defibit.io/`,
@@ -121,6 +122,8 @@ module.exports = {
     currency: 'USD',
   },
   etherscan: {
-    apiKey: process.env.polygonscanVerifyAPIKey,
-  },
+    apiKey: {
+      arbitrumOne: process.env.etherscanVerifyAPIKey,
+    },
+  }
 }
